@@ -1,0 +1,96 @@
+{
+  "global_importance": [
+    {
+      "feature": "is_peak_hour",
+      "importance": 13.3925
+    },
+    {
+      "feature": "hour",
+      "importance": 4.9516
+    },
+    {
+      "feature": "rolling_speed_3h",
+      "importance": 0.1393
+    },
+    {
+      "feature": "temperature_2m_c",
+      "importance": 0.081
+    },
+    {
+      "feature": "road_lanes",
+      "importance": 0.0502
+    },
+    {
+      "feature": "length_m",
+      "importance": 0.0343
+    },
+    {
+      "feature": "free_flow_speed_kmh",
+      "importance": 0.0117
+    },
+    {
+      "feature": "precipitation_mm",
+      "importance": 0.0088
+    },
+    {
+      "feature": "month",
+      "importance": 0.0053
+    },
+    {
+      "feature": "accident_risk_score",
+      "importance": 0.0048
+    },
+    {
+      "feature": "lag_speed_1h",
+      "importance": 0.0032
+    },
+    {
+      "feature": "road_type_primary",
+      "importance": 0.0007
+    },
+    {
+      "feature": "relative_humidity_2m_pct",
+      "importance": 0.0006
+    },
+    {
+      "feature": "road_type_secondary",
+      "importance": 0.0004
+    },
+    {
+      "feature": "road_type_trunk",
+      "importance": 0.0002
+    },
+    {
+      "feature": "wind_speed_10m_kmh",
+      "importance": 0.0001
+    },
+    {
+      "feature": "day_of_week",
+      "importance": 0.0
+    },
+    {
+      "feature": "event_type_Festival",
+      "importance": 0.0
+    },
+    {
+      "feature": "event_type_None",
+      "importance": 0.0
+    },
+    {
+      "feature": "is_weekend",
+      "importance": 0.0
+    },
+    {
+      "feature": "is_holiday",
+      "importance": 0.0
+    },
+    {
+      "feature": "event_present",
+      "importance": 0.0
+    },
+    {
+      "feature": "is_raining",
+      "importance": 0.0
+    }
+  ]
+}

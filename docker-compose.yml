@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for application metadata, historical aggregations & predictions
+  db:
+    image: postgres:15-alpine
+    container_name: clearroute-db
+    restart: always
+    environment:
+      POSTGRES_USER: clearroute_user
+      POSTGRES_PASSWORD: clearroute_secure_password
+      POSTGRES_DB: clearroute_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/app/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clearroute_user -d clearroute_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: clearroute-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://clearroute_user:clearroute_secure_password@db:5432/clearroute_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./ml/artifacts:/app/ml/artifacts
+      - ./powerbi/exports:/app/powerbi/exports
+
+  # React Frontend Single Page Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: clearroute-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
+    driver: local

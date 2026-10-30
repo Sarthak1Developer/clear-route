@@ -1,0 +1,6 @@
+city,avg_congestion_pct,peak_hour_congestion_pct,mean_speed_kmh,corridors_monitored,total_observations
+Bengaluru,36.52,55.11,35.6,5,1200
+Delhi,36.55,55.11,33.6,5,1200
+Hyderabad,36.51,55.01,34.9,5,1200
+Kolkata,36.53,55.11,32.4,5,1200
+Mumbai,36.52,55.08,38.1,5,1200

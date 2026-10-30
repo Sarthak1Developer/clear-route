@@ -1,0 +1,5 @@
+model_key,model_name,algorithm_family,mae,rmse,r2_score,is_champion
+historical_mean,Historical Mean Baseline,Lookup,11.45,14.82,0.542,0
+linear_regression,Linear Regression (Ridge),Parametric,8.32,10.95,0.698,0
+random_forest,Random Forest Regressor,Tree Bagging,4.88,6.54,0.841,0
+xgboost,XGBoost Regressor,Gradient Boosted Trees,3.65,4.92,0.895,1

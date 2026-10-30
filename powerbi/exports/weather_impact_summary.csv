@@ -1,0 +1,5 @@
+rain_category,mean_congestion_pct,mean_speed_kmh,observation_count
+Dry (<0.5mm),36.53,34.9,3300
+Light Rain (0.5-5mm),36.53,34.9,2340
+Moderate Rain (5-15mm),36.53,34.7,180
+Heavy Monsoon (>15mm),36.52,35.2,180

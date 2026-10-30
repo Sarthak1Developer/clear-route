@@ -1,0 +1,85 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+
+# Node & Frontend
+node_modules/
+.pnp
+.pnp.js
+frontend/dist/
+frontend/build/
+.npm
+.yarn/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment and Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs & OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Heavy datasets and raw exports (Never commit large raw data)
+data/raw/*
+!data/raw/.gitkeep
+data/bronze/*
+!data/bronze/.gitkeep
+data/silver/*
+!data/silver/.gitkeep
+data/gold/*.parquet
+!data/gold/.gitkeep
+
+# ML Model Heavy Binary Artifacts (keep sample / lightweight serialized metadata)
+ml/artifacts/*.joblib
+ml/artifacts/*.pkl
+ml/artifacts/*.bin
+!ml/artifacts/.gitkeep
+!ml/artifacts/metrics.json
+
+# Spark temporary warehouse
+spark-warehouse/
+metastore_db/
+derby.log

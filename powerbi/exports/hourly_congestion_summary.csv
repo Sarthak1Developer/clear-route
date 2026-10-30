@@ -1,0 +1,7 @@
+hour,is_weekend,is_peak_hour,mean_congestion_pct,mean_observed_speed_kmh
+8,0,1,55.05,24.7
+12,0,0,18.0,45.1
+14,0,0,18.0,45.1
+18,0,1,55.05,24.7
+20,0,1,55.05,24.7
+23,0,0,18.0,45.1

@@ -1,0 +1,26 @@
+location_id,location_name,city,latitude,longitude,road_type,road_lanes,length_m,accident_risk_score
+BLR_001,Whitefield,Bengaluru,12.9698,77.7499,primary,4,3100.0,0.7
+BLR_002,Central Silk Board,Bengaluru,12.9177,77.6238,trunk,8,4200.0,0.85
+BLR_003,Koramangala,Bengaluru,12.9352,77.6245,secondary,4,1900.0,0.5
+BLR_004,Indiranagar,Bengaluru,12.9784,77.6408,secondary,4,2200.0,0.45
+BLR_005,Electronic City,Bengaluru,12.8399,77.677,trunk,8,6500.0,0.55
+BOM_001,Andheri,Mumbai,19.1136,72.8697,trunk,8,4500.0,0.75
+BOM_002,BKC,Mumbai,19.0657,72.8687,primary,6,2800.0,0.4
+BOM_003,Dadar,Mumbai,19.0178,72.8478,primary,6,2200.0,0.7
+BOM_004,Powai,Mumbai,19.1176,72.906,trunk,6,3800.0,0.6
+BOM_005,Borivali,Mumbai,19.2288,72.8541,trunk,8,5000.0,0.55
+CCU_001,Salt Lake Sector V,Kolkata,22.5804,88.4378,primary,6,3300.0,0.45
+CCU_002,Park Street,Kolkata,22.5535,88.3524,secondary,4,1700.0,0.5
+CCU_003,Howrah Station Approach,Kolkata,22.5857,88.3426,trunk,6,2100.0,0.8
+CCU_004,New Town,Kolkata,22.5878,88.4688,trunk,8,5800.0,0.4
+CCU_005,Esplanade,Kolkata,22.5645,88.3516,primary,6,2400.0,0.65
+DEL_001,Laxmi Nagar,Delhi,28.6304,77.2773,primary,6,2400.0,0.65
+DEL_002,Connaught Place,Delhi,28.6315,77.2167,primary,4,1800.0,0.45
+DEL_003,Karol Bagh,Delhi,28.6514,77.1907,secondary,4,1500.0,0.55
+DEL_004,Hauz Khas,Delhi,28.5494,77.2001,trunk,8,3200.0,0.5
+DEL_005,Nehru Place,Delhi,28.5492,77.2518,primary,6,2100.0,0.6
+HYD_001,HITEC City,Hyderabad,17.4435,78.3772,trunk,6,3400.0,0.5
+HYD_002,Gachibowli,Hyderabad,17.4401,78.3489,trunk,8,4100.0,0.45
+HYD_003,Banjara Hills,Hyderabad,17.4156,78.435,primary,4,2600.0,0.55
+HYD_004,Begumpet,Hyderabad,17.4447,78.4664,primary,6,2900.0,0.6
+HYD_005,Secunderabad,Hyderabad,17.4399,78.4983,primary,4,1800.0,0.7
