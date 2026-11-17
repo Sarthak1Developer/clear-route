@@ -1,0 +1,26 @@
+location_id,location_name,city,road_type,road_lanes,free_flow_speed_kmh,accident_risk_score,baseline_congestion_pct,peak_hour_congestion_pct,off_peak_congestion_pct,rain_congestion_pct,event_congestion_pct,composite_risk_score,risk_tier,primary_risk_driver
+BLR_001,Whitefield,Bengaluru,primary,4,50.0,0.7,30.27,48.01,19.63,34.5,31.55,72.0,Critical Risk,Severe Peak Rush & High Accident Hazard & Constricted Carriageway & Monsoon Waterlogging Vulnerability
+HYD_005,Secunderabad,Hyderabad,primary,4,40.0,0.7,30.3,48.0,19.67,32.72,27.5,71.4,Critical Risk,Severe Peak Rush & High Accident Hazard & Constricted Carriageway & Monsoon Waterlogging Vulnerability
+CCU_003,Howrah Station Approach,Kolkata,trunk,6,45.0,0.8,25.06,42.75,14.45,25.85,24.09,68.7,Critical Risk,High Accident Hazard
+BLR_002,Central Silk Board,Bengaluru,trunk,8,60.0,0.85,20.48,37.46,10.29,24.48,21.29,66.0,Critical Risk,High Accident Hazard & Monsoon Waterlogging Vulnerability
+HYD_003,Banjara Hills,Hyderabad,primary,4,50.0,0.55,29.09,46.92,18.4,31.69,26.67,65.0,Critical Risk,Severe Peak Rush & Constricted Carriageway & Monsoon Waterlogging Vulnerability
+BOM_003,Dadar,Mumbai,primary,6,50.0,0.7,24.36,42.12,13.71,23.68,24.27,64.0,High Risk,High Accident Hazard
+BLR_003,Koramangala,Bengaluru,secondary,4,45.0,0.5,28.61,46.47,17.89,32.94,30.58,63.3,High Risk,Severe Peak Rush & Constricted Carriageway & Monsoon Waterlogging Vulnerability
+DEL_003,Karol Bagh,Delhi,secondary,4,45.0,0.55,29.0,46.84,18.29,25.94,29.83,63.0,High Risk,Severe Peak Rush & Constricted Carriageway
+CCU_005,Esplanade,Kolkata,primary,6,45.0,0.65,24.02,41.66,13.44,24.8,22.88,62.3,High Risk,Standard Diurnal Traffic
+CCU_002,Park Street,Kolkata,secondary,4,40.0,0.5,28.66,46.36,18.04,29.35,27.47,62.1,High Risk,Severe Peak Rush & Constricted Carriageway
+BLR_004,Indiranagar,Bengaluru,secondary,4,45.0,0.45,28.21,46.08,17.49,32.57,30.01,61.2,High Risk,Severe Peak Rush & Constricted Carriageway & Monsoon Waterlogging Vulnerability
+DEL_001,Laxmi Nagar,Delhi,primary,6,55.0,0.65,24.0,41.73,13.36,21.12,24.66,61.1,High Risk,Standard Diurnal Traffic
+HYD_004,Begumpet,Hyderabad,primary,6,55.0,0.6,23.49,41.21,12.86,25.68,21.13,60.5,High Risk,Monsoon Waterlogging Vulnerability
+BOM_001,Andheri,Mumbai,trunk,8,65.0,0.75,19.92,36.54,9.95,19.19,20.21,60.1,High Risk,High Accident Hazard
+BOM_004,Powai,Mumbai,trunk,6,60.0,0.6,23.48,41.19,12.85,22.44,23.67,59.4,High Risk,Standard Diurnal Traffic
+DEL_005,Nehru Place,Delhi,primary,6,55.0,0.6,23.53,41.29,12.87,20.41,24.11,58.8,High Risk,Standard Diurnal Traffic
+DEL_002,Connaught Place,Delhi,primary,4,45.0,0.45,28.18,46.04,17.46,25.69,28.57,58.8,High Risk,Severe Peak Rush & Constricted Carriageway
+HYD_001,HITEC City,Hyderabad,trunk,6,60.0,0.5,22.79,40.47,12.17,24.98,20.87,56.2,High Risk,Monsoon Waterlogging Vulnerability
+CCU_001,Salt Lake Sector V,Kolkata,primary,6,55.0,0.45,22.47,40.01,11.94,23.18,21.17,53.5,High Risk,Standard Diurnal Traffic
+BLR_005,Electronic City,Bengaluru,trunk,8,80.0,0.55,18.88,34.98,9.22,22.33,20.73,52.9,High Risk,Monsoon Waterlogging Vulnerability
+BOM_005,Borivali,Mumbai,trunk,8,70.0,0.55,18.92,34.99,9.28,18.17,19.06,51.5,High Risk,Standard Diurnal Traffic
+BOM_002,BKC,Mumbai,primary,6,55.0,0.4,22.12,39.6,11.64,21.24,22.42,50.8,High Risk,Standard Diurnal Traffic
+DEL_004,Hauz Khas,Delhi,trunk,8,65.0,0.5,18.72,34.63,9.17,16.24,19.56,48.9,Moderate Risk,Standard Diurnal Traffic
+HYD_002,Gachibowli,Hyderabad,trunk,8,70.0,0.45,18.49,34.32,9.0,20.15,16.62,48.2,Moderate Risk,Monsoon Waterlogging Vulnerability
+CCU_004,New Town,Kolkata,trunk,8,70.0,0.4,18.22,33.86,8.84,18.4,17.31,45.5,Moderate Risk,Standard Diurnal Traffic

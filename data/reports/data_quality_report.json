@@ -1,5 +1,5 @@
 {
-  "report_generated_at": "2026-11-17T07:54:32.086338+00:00",
+  "report_generated_at": "2026-11-17T13:47:16.301696+00:00",
   "pipeline_health_status": "HEALTHY - PRODUCTION READY",
   "layer_record_counts": {
     "silver_cleaned": 165000,

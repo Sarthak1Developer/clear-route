@@ -1,0 +1,22 @@
+event_id,event_name,event_type,city,date,venue,attendance,event_intensity,event_avg_congestion_pct,city_baseline_congestion_pct,congestion_lift_pct,observations_count
+EVT_001,Independence Day Celebrations,Public Holiday,Delhi,2019-08-15,Red Fort & Central Delhi,100000,0.85,26.09,24.67,1.42,120
+EVT_002,Gandhi Jayanti,Public Holiday,Delhi,2019-10-02,Raj Ghat & Central Secretariat,35000,0.4,26.44,24.67,1.77,120
+EVT_003,Diwali Festival Evening,Festival,Delhi,2019-10-27,"Citywide Retail Rings (Chandni Chowk, CP, Karol Bagh)",650000,0.95,20.37,24.67,-4.3,120
+EVT_004,Guru Nanak Jayanti,Festival,Delhi,2019-11-12,Gurudwara Bangla Sahib & Sis Ganj,180000,0.6,26.36,24.67,1.69,120
+EVT_005,Christmas Day,Public Holiday,Delhi,2019-12-25,Sacred Heart Cathedral & Connaught Place,90000,0.5,26.4,24.67,1.73,120
+EVT_006,India International Trade Fair,Assembly,Delhi,2019-11-20,Pragati Maidan Corridor,120000,0.7,26.41,24.67,1.74,120
+EVT_007,Ganesh Chaturthi Utsav Arrival,Festival,Mumbai,2019-09-02,"Lalbaug, Parel & Girgaon",1200000,0.9,23.38,21.76,1.62,120
+EVT_008,Anant Chaturdashi Visarjan Mega Procession,Festival,Mumbai,2019-09-12,"Girgaon Chowpatty, Dadar & Juhu Beach",2200000,1.0,23.48,21.76,1.72,120
+EVT_009,Diwali Lakshmi Pujan,Festival,Mumbai,2019-10-27,"Marine Drive, Dadar & Bandra West",700000,0.85,17.79,21.76,-3.97,120
+EVT_010,Cricket Match IPL Qualifier,Sports,Mumbai,2019-05-07,"Wankhede Stadium, Churchgate",33000,0.65,23.05,21.76,1.29,120
+EVT_011,Eid ul-Fitr,Public Holiday,Bengaluru,2019-06-05,Shivajinagar & Citywide Eidgahs,220000,0.7,26.76,25.27,1.49,120
+EVT_012,Bengaluru Karaga Shaktyotsava,Festival,Bengaluru,2019-04-19,"Dharmaraya Swamy Temple, Thigalarpet Old City",190000,0.75,26.61,25.27,1.35,120
+EVT_013,Karnataka Rajyotsava Celebrations,Festival,Bengaluru,2019-11-01,Kanteerava Stadium & MG Road Axis,280000,0.8,26.95,25.27,1.69,120
+EVT_014,Bengaluru Tech Summit 2019,Assembly,Bengaluru,2019-11-18,Bengaluru Palace Grounds,45000,0.6,27.0,25.27,1.73,120
+EVT_015,Bonalu Mega Procession,Festival,Hyderabad,2019-07-28,"Lal Darwaza, Charminar & Golconda",400000,0.85,20.86,24.86,-4.0,120
+EVT_016,Ganesh Immersion Hussain Sagar,Festival,Hyderabad,2019-09-12,Tank Bund & NTR Marg Corridor,800000,0.95,26.32,24.86,1.46,120
+EVT_017,Milad-un-Nabi,Public Holiday,Hyderabad,2019-11-10,"Charminar, Mecca Masjid & Old City",350000,0.7,20.5,24.86,-4.36,120
+EVT_018,Durga Puja Mahasaptami - Dashami Mega Festival,Festival,Kolkata,2019-10-05,North & South Kolkata Pandal Circuits,2500000,1.0,19.77,23.7,-3.94,120
+EVT_019,Durga Puja Dashami Immersion Procession,Festival,Kolkata,2019-10-08,"Babu Ghat, Howrah Bridge & Strand Road",1800000,0.95,25.38,23.7,1.68,120
+EVT_020,Kali Puja & Diwali Illumination,Festival,Kolkata,2019-10-27,"Kalighat, Dakshineswar & Barasat",750000,0.85,19.55,23.7,-4.15,120
+EVT_021,Historic Day/Night Pink Ball Test Match,Sports,Kolkata,2019-11-22,Eden Gardens & Esplanade Approach,65000,0.75,25.64,23.7,1.94,120

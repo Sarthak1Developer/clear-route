@@ -1,0 +1,318 @@
+// ==============================================================================
+// ClearRoute DAX Measures Master Library
+// Organized by Dashboard Page (Pages 1 to 6) + System & Audit Measures
+// Paste these measures into a dedicated '_Measures' table in Power BI Desktop
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// PAGE 1: EXECUTIVE OVERVIEW MEASURES
+// ------------------------------------------------------------------------------
+
+// 1. Overall Network Average Congestion Percentage
+[Avg Congestion Pct] = 
+AVERAGE(fact_congestion_hourly[congestion_percentage])
+
+// 2. Total Historical Observations Ingested
+[Total Observations] = 
+COUNTROWS(fact_congestion_hourly)
+
+// 3. Formatted Total Readings (e.g. "165.0K")
+[Total Observations Formatted] = 
+FORMAT([Total Observations], "#,##0")
+
+// 4. Total Urban Road Corridors Monitored
+[Corridors Monitored] = 
+DISTINCTCOUNT(dim_location[location_id])
+
+// 5. Total Metropolitan Cities Covered
+[Cities Monitored] = 
+DISTINCTCOUNT(dim_location[city])
+
+// 6. Network Peak Hour Congestion Rate (08:00-11:00 & 17:00-21:00)
+[Peak Hour Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[is_peak_hour] = 1
+)
+
+// 7. Network Off-Peak Congestion Rate
+[Off Peak Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[is_peak_hour] = 0
+)
+
+// 8. Commute Rush Hour Delta
+[Peak Rush Delta] = 
+[Peak Hour Congestion] - [Off Peak Congestion]
+
+// 9. Harmonic Mean Observed Network Speed (km/h)
+[Mean Network Speed kmh] = 
+AVERAGE(fact_congestion_hourly[observed_speed_kmh])
+
+// 10. Most Congested Metropolitan Center
+[Most Congested City] = 
+FIRSTNONBLANK(
+    TOPN(1, VALUES(dim_location[city]), [Avg Congestion Pct], DESC),
+    1
+)
+
+
+// ------------------------------------------------------------------------------
+// PAGE 2: LOCATION ANALYTICS MEASURES
+// ------------------------------------------------------------------------------
+
+// 11. Weekday Congestion Average (Monday - Friday)
+[Weekday Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[is_weekend] = 0
+)
+
+// 12. Weekend Congestion Average (Saturday & Sunday)
+[Weekend Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[is_weekend] = 1
+)
+
+// 13. Weekend Relief Delta
+[Weekend Relief Delta] = 
+[Weekday Congestion] - [Weekend Congestion]
+
+// 14. Speed Degradation Relative to Free-Flow Capacity (%)
+[Speed Degradation Pct] = 
+AVERAGE(fact_congestion_hourly[speed_reduction_pct])
+
+// 15. Single Highest Congestion Corridor Across Selection
+[Top Congested Corridor] = 
+FIRSTNONBLANK(
+    TOPN(1, VALUES(dim_location[location_name]), [Avg Congestion Pct], DESC),
+    1
+)
+
+// 16. Corridor Capacity Bottleneck Index (Ratio of Volume to Lane Count)
+[Bottleneck Index] = 
+DIVIDE(
+    [Avg Congestion Pct],
+    SELECTEDVALUE(dim_location[road_lanes], 4),
+    0
+)
+
+
+// ------------------------------------------------------------------------------
+// PAGE 3: WEATHER IMPACT DYNAMICS MEASURES
+// ------------------------------------------------------------------------------
+
+// 17. Dry Weather Congestion Baseline (Precipitation <= 0.5mm)
+[Dry Weather Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[precipitation_mm] <= 0.5
+)
+
+// 18. Light Rain Congestion (0.5mm - 5.0mm)
+[Light Rain Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[precipitation_mm] > 0.5,
+    fact_congestion_hourly[precipitation_mm] <= 5.0
+)
+
+// 19. Moderate Rain Congestion (5.0mm - 15.0mm)
+[Moderate Rain Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[precipitation_mm] > 5.0,
+    fact_congestion_hourly[precipitation_mm] <= 15.0
+)
+
+// 20. Heavy Monsoon Congestion (> 15.0mm)
+[Heavy Monsoon Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[precipitation_mm] > 15.0
+)
+
+// 21. Monsoon Congestion Impact Delta (Moderate Rain vs Dry)
+[Rain Impact Delta] = 
+[Moderate Rain Congestion] - [Dry Weather Congestion]
+
+// 22. Hot Weather Congestion (> 35°C Afternoon Heat)
+[Hot Weather Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[temperature_2m_c] > 35.0
+)
+
+// 23. Cool Weather Congestion (< 20°C Morning/Night)
+[Cool Weather Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[temperature_2m_c] < 20.0
+)
+
+// 24. Thermal Congestion Delta
+[Thermal Impact Delta] = 
+[Hot Weather Congestion] - [Cool Weather Congestion]
+
+
+// ------------------------------------------------------------------------------
+// PAGE 4: EVENT & HOLIDAY IMPACT DYNAMICS MEASURES
+// ------------------------------------------------------------------------------
+
+// 25. Event Interval Average Congestion
+[Event Period Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[event_present] = 1
+)
+
+// 26. Non-Event Baseline Congestion
+[Non Event Baseline Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[event_present] = 0
+)
+
+// 27. Event Congestion Lift Delta
+[Event Congestion Lift] = 
+[Event Period Congestion] - [Non Event Baseline Congestion]
+
+// 28. Cultural Festival Congestion
+[Festival Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[event_type] = "Festival"
+)
+
+// 29. Civic & Tech Assembly Congestion
+[Assembly Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[event_type] = "Assembly"
+)
+
+// 30. Gazetted Holiday Congestion
+[Public Holiday Congestion] = 
+CALCULATE(
+    [Avg Congestion Pct],
+    fact_congestion_hourly[event_type] = "Public Holiday"
+)
+
+// 31. Total Cataloged Significant Events
+[Total Events Cataloged] = 
+COUNTROWS(dim_event)
+
+
+// ------------------------------------------------------------------------------
+// PAGE 5: MACHINE LEARNING MODEL PERFORMANCE MEASURES
+// ------------------------------------------------------------------------------
+
+// 32. Actual Test Set Ground Truth Congestion (%)
+[Test Set Actual Congestion] = 
+AVERAGE(model_actual_vs_predicted[actual_congestion_pct])
+
+// 33. Historical Mean Model Test MAE
+[MAE Historical Mean] = 
+AVERAGEX(
+    model_actual_vs_predicted,
+    ABS(model_actual_vs_predicted[actual_congestion_pct] - model_actual_vs_predicted[pred_historical_mean])
+)
+
+// 34. Linear Regression (Ridge) Test MAE
+[MAE Ridge Regression] = 
+AVERAGEX(
+    model_actual_vs_predicted,
+    ABS(model_actual_vs_predicted[actual_congestion_pct] - model_actual_vs_predicted[pred_linear_regression])
+)
+
+// 35. Random Forest Regressor Test MAE
+[MAE Random Forest] = 
+AVERAGEX(
+    model_actual_vs_predicted,
+    ABS(model_actual_vs_predicted[actual_congestion_pct] - model_actual_vs_predicted[pred_random_forest])
+)
+
+// 36. XGBoost Regressor Test MAE
+[MAE XGBoost] = 
+AVERAGEX(
+    model_actual_vs_predicted,
+    ABS(model_actual_vs_predicted[actual_congestion_pct] - model_actual_vs_predicted[pred_xgboost])
+)
+
+// 37. Champion Model Held-Out Test R² Score
+[Champion Model R2] = 
+CALCULATE(
+    MAX(model_performance_summary[r2_score]),
+    model_performance_summary[is_champion] = 1
+)
+
+// 38. Champion Model Title
+[Champion Model Name] = 
+CALCULATE(
+    FIRSTNONBLANK(model_performance_summary[model_name], 1),
+    model_performance_summary[is_champion] = 1
+)
+
+// 39. Champion Model Held-Out Test MAE
+[Champion Model MAE] = 
+CALCULATE(
+    MIN(model_performance_summary[mae]),
+    model_performance_summary[is_champion] = 1
+)
+
+// 40. XGBoost Mean Absolute Percentage Error (MAPE Proxy)
+[XGBoost Prediction Accuracy] = 
+100 - [MAE XGBoost]
+
+
+// ------------------------------------------------------------------------------
+// PAGE 6: PREDICTIVE ANALYTICS & RISK SCENARIOS MEASURES
+// ------------------------------------------------------------------------------
+
+// 41. Average Corridor Composite Risk Score (0-100)
+[Avg Corridor Risk Score] = 
+AVERAGE(corridor_predictive_risk[composite_risk_score])
+
+// 42. Count of Critical & High Risk Corridors
+[Critical Corridors Count] = 
+CALCULATE(
+    COUNTROWS(corridor_predictive_risk),
+    corridor_predictive_risk[risk_tier] IN {"Critical Risk", "High Risk"}
+)
+
+// 43. Maximum Peak Congestion Predicted Across Corridors
+[Max Predicted Peak Congestion] = 
+MAX(corridor_predictive_risk[peak_hour_congestion_pct])
+
+// 44. Top Priority Risk Corridor Name
+[Top Risk Bottleneck Corridor] = 
+FIRSTNONBLANK(
+    TOPN(1, VALUES(corridor_predictive_risk[location_name]), corridor_predictive_risk[composite_risk_score], DESC),
+    1
+)
+
+// 45. Primary SHAP Global Driver Feature
+[Top SHAP Feature] = 
+FIRSTNONBLANK(
+    TOPN(1, VALUES(model_feature_importance[display_name]), model_feature_importance[shap_importance_pct], DESC),
+    1
+)
+
+
+// ------------------------------------------------------------------------------
+// SYSTEM AUDIT & DATA REFRESH MEASURES
+// ------------------------------------------------------------------------------
+
+// 46. Data Last Refreshed UTC Timestamp
+[Data Last Refreshed UTC] = 
+FIRSTNONBLANK(refresh_metadata[refresh_timestamp_utc], 1)
+
+// 47. Data Last Refreshed Display Date
+[Data Last Refreshed Date] = 
+FIRSTNONBLANK(refresh_metadata[refresh_date], 1)
+
+// 48. Pipeline Health Status
+[Pipeline Health Status] = 
+FIRSTNONBLANK(refresh_metadata[pipeline_status], 1)

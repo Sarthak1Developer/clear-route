@@ -1,0 +1,5 @@
+temperature_category,mean_congestion_pct,mean_speed_kmh,observation_count
+Cool (<20°C),13.83,46.9,14565
+Moderate (20-28°C),22.05,43.7,94580
+Warm (28-35°C),29.78,38.6,48295
+Hot (>35°C),32.19,36.7,7560
