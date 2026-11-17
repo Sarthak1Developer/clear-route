@@ -26,7 +26,7 @@ export const WeatherImpact = () => {
       try {
         setLoading(true);
         const [impactRes, cityRes] = await Promise.all([
-          api.getWeatherImpact(),
+          api.getWeatherImpact(selectedCity.name),
           api.getWeather(selectedCity.name).catch(() => null),
         ]);
         if (isMounted) {
@@ -87,11 +87,11 @@ export const WeatherImpact = () => {
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="text-[10px] px-2 py-0.5 rounded font-mono border bg-slate-900 border-slate-700 text-slate-300">
-                  {cityWeather.current_context?.is_live ? 'Live Provider Stream' : 'Verified Repository Feed'}
+                  {cityWeather.current_context?.is_live ? 'Live Provider Stream' : 'Historical database archive'}
                 </span>
               </div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span>{cityWeather.current_context?.weather_condition || 'Overcast / Moderate'}</span>
+                <span>{cityWeather.current_context?.weather_condition || 'Unknown'}</span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Provenance: {cityWeather.provenance || 'Open-Meteo ERA5 Reanalysis'}
@@ -130,7 +130,7 @@ export const WeatherImpact = () => {
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Provider Connectivity</span>
               <p className="font-mono text-emerald-400 font-bold text-[11px] mt-0.5">
-                {cityWeather.provider_status?.includes('unavailable') ? 'Database Fallback Active' : 'Live Sync Active'}
+                {cityWeather.provider_available ? 'Live Provider Active' : 'Historical Archive'}
               </p>
             </div>
           </div>

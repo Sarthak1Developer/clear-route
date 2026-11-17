@@ -32,7 +32,7 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-[#0E1526] border-r border-slate-800 flex flex-col h-screen fixed left-0 top-0 z-30 select-none">
+    <aside className="w-full md:w-64 bg-[#0E1526] border-r border-slate-800 flex flex-col md:h-screen md:fixed left-0 top-0 z-30 select-none">
       {/* Brand Header */}
       <div className="h-16 px-5 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -50,8 +50,8 @@ export const Sidebar = () => {
       </div>
 
       {/* Navigation List */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
-        <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <nav className="flex-1 px-3 py-4 grid grid-cols-2 md:block gap-1 md:space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+        <div className="col-span-2 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
           Analytics Engine
         </div>
 

@@ -77,7 +77,7 @@ export const Overview = () => {
             Indian Metropolitan Congestion Intelligence
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Multi-factor predictive analytics combining historical Uber Movement corridor speeds, Open-Meteo ERA5 weather reanalysis, official MoRTH accident contexts, and cultural event dynamics.
+            Explore generated traffic benchmarks alongside weather and event context. Observational validity and causal effects have not been established.
           </p>
         </div>
         <button
@@ -105,7 +105,7 @@ export const Overview = () => {
           unit="Corridors"
           icon={MapPin}
           accentColor="blue"
-          description="Zenodo Uber Movement TAZ Segments"
+          description="Configured demonstration corridors"
         />
         <MetricCard
           title="Network Avg Congestion"
@@ -116,11 +116,11 @@ export const Overview = () => {
         />
         <MetricCard
           title="Dataset Temporal Range"
-          value="9 Months"
+          value={data?.historical_coverage || 'No historical records'}
           unit="2019 Baseline"
           icon={Calendar}
           accentColor="emerald"
-          description={`${data.total_records_processed?.toLocaleString() || '184,500'} hourly readings`}
+          description={`${data.total_records_processed?.toLocaleString() ?? 'Unavailable'} hourly readings`}
         />
       </div>
 
@@ -249,7 +249,7 @@ export const Overview = () => {
         {/* Monthly Trend 2019 */}
         <Card
           title="2019 Monthly Progression"
-          subtitle="April – December 2019 seasonal progression (Monsoon surge)"
+          subtitle="Monthly averages from the application database"
         >
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -382,7 +382,7 @@ export const Overview = () => {
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Gold Records</span>
                   <p className="text-cyan-400 font-mono font-bold mt-0.5">
-                    {quality?.total_gold_records?.toLocaleString() || '184,500'}
+                    {quality?.total_gold_records?.toLocaleString() ?? 'Unavailable'}
                   </p>
                 </div>
               </div>

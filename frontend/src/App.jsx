@@ -1,18 +1,18 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 
-import { Overview } from './pages/Overview';
-import { CityAnalytics } from './pages/CityAnalytics';
-import { LocationAnalytics } from './pages/LocationAnalytics';
-import { CongestionPrediction } from './pages/CongestionPrediction';
-import { EventImpact } from './pages/EventImpact';
-import { WeatherImpact } from './pages/WeatherImpact';
-import { ModelPerformance } from './pages/ModelPerformance';
-import { DataExplorer } from './pages/DataExplorer';
-import { Reports } from './pages/Reports';
-import { Settings } from './pages/Settings';
+const Overview = lazy(() => import('./pages/Overview').then(module => ({ default: module.Overview })));
+const CityAnalytics = lazy(() => import('./pages/CityAnalytics').then(module => ({ default: module.CityAnalytics })));
+const LocationAnalytics = lazy(() => import('./pages/LocationAnalytics').then(module => ({ default: module.LocationAnalytics })));
+const CongestionPrediction = lazy(() => import('./pages/CongestionPrediction').then(module => ({ default: module.CongestionPrediction })));
+const EventImpact = lazy(() => import('./pages/EventImpact').then(module => ({ default: module.EventImpact })));
+const WeatherImpact = lazy(() => import('./pages/WeatherImpact').then(module => ({ default: module.WeatherImpact })));
+const ModelPerformance = lazy(() => import('./pages/ModelPerformance').then(module => ({ default: module.ModelPerformance })));
+const DataExplorer = lazy(() => import('./pages/DataExplorer').then(module => ({ default: module.DataExplorer })));
+const Reports = lazy(() => import('./pages/Reports').then(module => ({ default: module.Reports })));
+const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
 
 export const App = () => {
   const { activeTab } = useApp();
@@ -50,10 +50,13 @@ export const App = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="pl-64 flex flex-col flex-1 min-w-0">
+      <div className="md:pl-64 flex flex-col flex-1 min-w-0">
         <Header />
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
-          {renderActiveTab()}
+        <main className="flex-1 p-3 sm:p-6 max-w-7xl w-full mx-auto">
+          <div role="note" className="mb-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-xs text-amber-200">
+            Traffic records and model benchmarks use generated demonstration data. Real-world congestion and causal weather/event effects are unverified. The application database and Gold dataset contain inconsistent traffic values; compare them separately.
+          </div>
+          <Suspense fallback={<p role="status">Loading analytics page…</p>}>{renderActiveTab()}</Suspense>
         </main>
       </div>
     </div>

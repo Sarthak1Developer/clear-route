@@ -6,12 +6,12 @@ export const Header = () => {
   const { cities, selectedCity, setSelectedCity, healthStatus, toast } = useApp();
 
   return (
-    <header className="h-16 bg-[#0E1526]/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20 px-6 flex items-center justify-between">
+    <header className="min-h-16 flex-wrap gap-2 py-2 bg-[#0E1526]/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20 px-6 flex items-center justify-between">
       {/* City Selector */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-1.5 shadow-inner">
           <Building2 className="w-4 h-4 text-cyan-400" />
-          <span className="text-xs text-slate-400 font-medium">Metropolitan City:</span>
+          <span className="text-xs text-slate-400 font-medium">City:</span>
           <select
             value={selectedCity.code}
             onChange={(e) => {
@@ -39,7 +39,7 @@ export const Header = () => {
       <div className="flex items-center gap-3">
         <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded bg-slate-800/40 border border-slate-700/50 text-[11px] text-slate-300">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Zenodo Uber Movement · OpenStreetMap · ERA5 Weather</span>
+          <span>Generated traffic benchmark · Weather context</span>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1 bg-cyan-950/40 border border-cyan-800/60 rounded-lg text-xs font-medium text-cyan-300">

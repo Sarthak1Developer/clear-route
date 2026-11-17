@@ -223,7 +223,7 @@ export const ModelPerformance = () => {
       {/* SHAP Explainability Summary */}
       <Card
         title={`SHAP Global Feature Attributions — ${explainabilityData?.model || 'XGBoost Regressor (TreeExplainer)'}`}
-        subtitle={`Average magnitude of impact on model output magnitude: mean(|SHAP value|) · Base Value: ${explainabilityData?.base_value || 24.05}%`}
+        subtitle={`Average magnitude of impact on model output magnitude: mean(|SHAP value|) · Base Value: ${explainabilityData?.base_value ?? 'Unavailable'}%`}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 text-xs">
           {(explainabilityData?.top_drivers || []).slice(0, 4).map((d) => (
