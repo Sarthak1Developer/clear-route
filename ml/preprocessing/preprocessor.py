@@ -31,14 +31,17 @@ class TrafficDataPreprocessor:
         Performs strict chronological splitting (70% train, 15% val, 15% test)
         to prevent temporal data leakage and preserve real time-series causality.
         """
-        df = df.sort_values(by="timestamp").reset_index(drop=True)
-        n = len(df)
-        train_end = int(n * train_ratio)
-        val_end = int(n * (train_ratio + val_ratio))
-
-        train_df = df.iloc[:train_end].copy()
-        val_df = df.iloc[train_end:val_end].copy()
-        test_df = df.iloc[val_end:].copy()
+        if not 0 < train_ratio < 1 or not 0 < val_ratio < 1 or train_ratio + val_ratio >= 1:
+            raise ValueError("Split ratios must leave nonempty train, validation and test partitions")
+        df = df.sort_values(by="timestamp", kind="stable").reset_index(drop=True)
+        times = df["timestamp"].drop_duplicates().tolist()
+        train_end = int(len(times) * train_ratio)
+        val_end = int(len(times) * (train_ratio + val_ratio))
+        if not 0 < train_end < val_end < len(times):
+            raise ValueError("Insufficient distinct timestamps for chronological partitions")
+        train_df = df[df["timestamp"] < times[train_end]].copy()
+        val_df = df[(df["timestamp"] >= times[train_end]) & (df["timestamp"] < times[val_end])].copy()
+        test_df = df[df["timestamp"] >= times[val_end]].copy()
 
         return train_df, val_df, test_df
 

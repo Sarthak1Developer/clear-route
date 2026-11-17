@@ -365,72 +365,15 @@ class InferenceService:
                 "limitations_and_caveats": LIMITATIONS_AND_CAVEATS
             }
 
-        # 3. Historical Mean Baseline Segment Attributions
-        hm_model = self.models["historical_mean"]
-        base_val = round(float(getattr(hm_model, "global_mean", 24.05)), 2)
-        total_delta = round(pred_congestion - base_val, 2)
-
-        hr_contrib = round(total_delta * 0.60, 2)
-        dow_contrib = round(total_delta * 0.25, 2)
-        loc_contrib = round(total_delta * 0.15, 2)
-
-        contributions = [
-            {
-                "feature": "hour",
-                "display_name": "Hour of Day (Diurnal Segment Mean)",
-                "category": "time_of_day",
-                "feature_value": int(features.get("hour", 12)),
-                "attribution_value": hr_contrib,
-                "direction": "increases_congestion" if hr_contrib >= 0 else "dampens_congestion",
-                "percentage_contribution": 60.0,
-            },
-            {
-                "feature": "day_of_week",
-                "display_name": "Day of Week (Weekly Segment Pattern)",
-                "category": "time_of_day",
-                "feature_value": int(features.get("day_of_week", 0)),
-                "attribution_value": dow_contrib,
-                "direction": "increases_congestion" if dow_contrib >= 0 else "dampens_congestion",
-                "percentage_contribution": 25.0,
-            },
-            {
-                "feature": "location_id",
-                "display_name": "Corridor Spatial Fixed Effect",
-                "category": "spatial_location",
-                "feature_value": str(features.get("location_id", "")),
-                "attribution_value": loc_contrib,
-                "direction": "increases_congestion" if loc_contrib >= 0 else "dampens_congestion",
-                "percentage_contribution": 15.0,
-            }
-        ]
-
-        sum_attr = round(hr_contrib + dow_contrib + loc_contrib, 2)
+        # Neither a lookup table nor a failed TreeExplainer supports feature SHAP values.
         return {
-            "prediction_id": pred_id,
-            "model_id": model_key,
-            "model_name": model_info["name"],
-            "model_version": "1.0.0",
-            "predicted_congestion": pred_congestion,
-            "congestion_category": category,
-            "base_value": base_val,
-            "additive_check": {
-                "base_value": base_val,
-                "sum_attributions": sum_attr,
-                "reconstructed_prediction": round(base_val + sum_attr, 2),
-                "is_consistent": True
-            },
-            "category_impacts": {
-                "time_of_day": round(hr_contrib + dow_contrib, 2),
-                "spatial_location": loc_contrib,
-                "weather_condition": 0.0,
-                "traffic_history": 0.0,
-                "events_and_holidays": 0.0,
-                "road_characteristics": 0.0
-            },
-            "feature_contributions": contributions,
-            "feature_values": features,
-            "explanation_summary": f"Historical lookup predicted {pred_congestion}% against global network mean of {base_val}% across diurnal ({hr_contrib:+.1f}%) and weekly ({dow_contrib:+.1f}%) profiles.",
-            "limitations_and_caveats": LIMITATIONS_AND_CAVEATS
+            "prediction_id": pred_id, "model_id": model_key,
+            "model_name": model_info["name"], "model_version": "1.0.0",
+            "predicted_congestion": pred_congestion, "congestion_category": category,
+            "base_value": None, "additive_check": None, "category_impacts": {},
+            "feature_contributions": [], "feature_values": features,
+            "explanation_summary": "Feature explanation unavailable for this model. No substitute attributions were generated.",
+            "limitations_and_caveats": LIMITATIONS_AND_CAVEATS,
         }
 
     def predict(
@@ -511,9 +454,9 @@ class InferenceService:
             baseline_val = self.predict_scalar("historical_mean", features)
             baseline_pct = round(baseline_val, 1)
         else:
-            baseline_pct = 24.1
+            baseline_pct = None
         
-        difference_pct = round(predicted_pct - baseline_pct, 1)
+        difference_pct = round(predicted_pct - baseline_pct, 1) if baseline_pct is not None else None
         category = explanation.get("congestion_category") or ("Low" if predicted_pct <= 25.0 else "Moderate" if predicted_pct <= 50.0 else "High" if predicted_pct <= 75.0 else "Severe")
 
         # 3. Model Metadata
@@ -530,13 +473,9 @@ class InferenceService:
             for c in feature_contributions[:10]
         ]
 
-        # 5. Confidence Interval from Model RMSE
-        rmse_val = float(model_info.get("rmse") or 3.5)
-        lower_bound = max(0.0, round(predicted_pct - 1.96 * rmse_val, 1))
-        upper_bound = min(100.0, round(predicted_pct + 1.96 * rmse_val, 1))
-
+        # RMSE alone does not establish a calibrated 95% interval.
         # 6. Formatted Timestamp
-        p_date = prediction_date or "2026-11-17"
+        p_date = prediction_date or pd.Timestamp.now(tz="Asia/Kolkata").date().isoformat()
         p_time = prediction_time or f"{hour:02d}:00"
         timestamp_str = f"{p_date}T{p_time}:00"
 
@@ -568,17 +507,14 @@ class InferenceService:
             "selected_model": model_type,
             "historical_baseline_pct": baseline_pct,
             "difference_pct": difference_pct,
-            "confidence_interval": {
-                "lower": lower_bound,
-                "upper": upper_bound,
-            },
+            "confidence_interval": None,
             "input_features": features,
             "base_value": explanation.get("base_value"),
             "additive_check": explanation.get("additive_check"),
             "category_impacts": explanation.get("category_impacts"),
             "feature_contributions": feature_contributions,
             "explanation_summary": explanation.get("explanation_summary"),
-            "limitations_and_caveats": explanation.get("limitations_and_caveats"),
+            "limitations_and_caveats": (explanation.get("limitations_and_caveats") or []) + ["Traffic artifacts were trained on generated demonstration data. Real-world predictive validity is unverified.", "Missing lag speeds are imputed to free-flow speed; future scenarios are not live forecasts."],
             "shap_attributions": shap_attributions,
         }
 
@@ -680,16 +616,12 @@ class InferenceService:
                 "driver": disp,
                 "feature": f_name,
                 "mean_shap_pct": round(mean_shap, 2),
-                "direction": driver_directions.get(f_name, "Modulates Congestion"),
+                "direction": "Magnitude only; direction varies by observation",
                 "category": item.get("category", "other"),
                 "rank": idx + 1
             })
 
-        summary_text = (
-            f"SHAP TreeExplainer attributions prove that traffic swings across Indian metropolitan cities "
-            f"are dominated by diurnal rush hours ({top_drivers[0]['driver']}: {top_drivers[0]['mean_shap_pct']}%) "
-            f"and speed momentum, while higher road capacity ({top_drivers[4]['driver']}) consistently dampens delays."
-        )
+        summary_text = "Global mean absolute SHAP values describe model associations on benchmark data; they do not establish causal direction or real-world forecast validity."
 
         return {
             "model": "XGBoost Regressor (TreeExplainer)",

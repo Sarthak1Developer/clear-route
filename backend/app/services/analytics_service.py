@@ -31,7 +31,7 @@ class AnalyticsService:
 
         total_corridors = 0
         sum_c = 0.0
-        congested_city = "Bengaluru"
+        congested_city = "No historical records"
         max_c = -1.0
 
         for c in cities:
@@ -64,7 +64,7 @@ class AnalyticsService:
         if min_ts and max_ts:
             coverage_str = f"{min_ts.strftime('%B %d, %Y')} – {max_ts.strftime('%B %d, %Y')}"
         else:
-            coverage_str = "April 1, 2019 – December 31, 2019"
+            coverage_str = "No historical records"
 
         # Diurnal 24-hr distribution from database
         hourly_trend = self.repo.get_hourly_trend_data()
@@ -229,7 +229,7 @@ class AnalyticsService:
         monthly = self.repo.get_monthly_trend_data(location_id=loc.id)
 
         # Rain delta
-        rain_stats = self.repo.get_weather_impact_data(city_id=loc.city_id)
+        rain_stats = self.repo.get_weather_impact_data(location_id=loc.id)
         rain_delta = rain_stats.get("heavy_rain_surge", 0.0)
 
         return {

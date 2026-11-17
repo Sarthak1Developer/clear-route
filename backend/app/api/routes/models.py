@@ -1,5 +1,6 @@
 import os
 import json
+import csv
 from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -28,6 +29,9 @@ def get_model_performance(db: Session = Depends(get_db)):
                 metrics_data = json.load(f)
         except Exception:
             pass
+
+    if not metrics_data.get("models"):
+        raise HTTPException(status_code=503, detail="Evaluation artifact unavailable; database seed metrics are not a substitute.")
 
     model_items = []
     best_key = metrics_data.get("best_model")
@@ -63,12 +67,15 @@ def get_model_performance(db: Session = Depends(get_db)):
                 "name": v.get("name", k),
                 "family": v.get("family", "Statistical Model"),
                 "role": v.get("role", "Benchmarking"),
-                "mae": round(float(v.get("mae", 0.0)), 3),
-                "rmse": round(float(v.get("rmse", 0.0)), 3),
-                "r2": round(float(v.get("r2", 1.0)), 3),
+                "mae": round(float(v["mae"]), 3),
+                "rmse": round(float(v["rmse"]), 3),
+                "r2": round(float(v["r2"]), 3),
                 "is_primary": bool(is_prim),
             })
             idx += 1
+
+    if not model_items:
+        raise HTTPException(status_code=503, detail="Model evaluation metrics unavailable.")
 
     # Verify best model based on genuine held-out test metrics
     if best_key:
@@ -80,19 +87,17 @@ def get_model_performance(db: Session = Depends(get_db)):
         primary_model = next((m for m in model_items if m["is_primary"]), None)
         best = primary_model or min(model_items, key=lambda x: x["mae"])
 
-    # Held-out actual vs predicted test samples
-    actual_vs_pred = [
-        {"index": 1, "timestamp": "2019-11-25 08:00", "actual": 68.5, "predicted": 67.2},
-        {"index": 2, "timestamp": "2019-11-25 12:00", "actual": 42.0, "predicted": 41.3},
-        {"index": 3, "timestamp": "2019-11-25 18:00", "actual": 76.4, "predicted": 75.8},
-        {"index": 4, "timestamp": "2019-11-26 09:00", "actual": 71.0, "predicted": 70.1},
-        {"index": 5, "timestamp": "2019-11-26 19:00", "actual": 79.2, "predicted": 79.9},
-        {"index": 6, "timestamp": "2019-11-27 18:00", "actual": 75.1, "predicted": 74.5},
-        {"index": 7, "timestamp": "2019-11-28 14:00", "actual": 38.6, "predicted": 38.9},
-        {"index": 8, "timestamp": "2019-11-29 18:00", "actual": 82.3, "predicted": 81.7},
-        {"index": 9, "timestamp": "2019-11-30 16:00", "actual": 51.0, "predicted": 50.4},
-        {"index": 10, "timestamp": "2019-12-01 12:00", "actual": 34.5, "predicted": 35.2},
-    ]
+    # Use exported held-out observations; no illustrative chart points.
+    actual_vs_pred = []
+    samples_path = os.path.join(PROJECT_ROOT, "powerbi", "exports", "model_actual_vs_predicted.csv")
+    if os.path.exists(samples_path):
+        with open(samples_path, newline="", encoding="utf-8") as stream:
+            for index, row in enumerate(csv.DictReader(stream), 1):
+                actual_vs_pred.append({"index": index, "timestamp": row["timestamp"],
+                    "actual": float(row["actual_congestion_pct"]),
+                    "predicted": float(row["pred_xgboost"])})
+                if index == 10:
+                    break
 
     return {
         "models": model_items,

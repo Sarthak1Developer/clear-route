@@ -20,14 +20,14 @@ def get_data_sources(db: Session = Depends(get_db)) -> Dict[str, Any]:
     for s in sources:
         items.append({
             "id": s.id,
-            "source_name": s.source_name,
+            "source_name": "Generated traffic benchmark (legacy catalog claimed Uber Movement)" if s.category.lower() == "traffic" else s.source_name,
             "category": s.category,
             "provenance_url": s.provenance_url,
             "temporal_coverage": s.temporal_coverage,
             "spatial_coverage": s.spatial_coverage,
             "record_count": s.record_count,
             "license": s.license,
-            "quality_status": s.quality_status,
+            "quality_status": "Generated demonstration data; not verified observations" if s.category.lower() == "traffic" else "Source attribution recorded; independent provenance not verified",
         })
     return {"sources": items}
 

@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Request, HTTPException
+import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.database.session import Base, engine
@@ -30,7 +31,20 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down ClearRoute API...")
 
+def validate_date_filters(request: Request):
+    dates = {}
+    for key in ("date", "start_date", "end_date"):
+        value = request.query_params.get(key)
+        if value:
+            try:
+                dates[key] = datetime.date.fromisoformat(value)
+            except ValueError:
+                raise HTTPException(status_code=422, detail=f"{key} must be a valid YYYY-MM-DD date")
+    if dates.get("start_date") and dates.get("end_date") and dates["start_date"] > dates["end_date"]:
+        raise HTTPException(status_code=422, detail="start_date must not exceed end_date")
+
 app = FastAPI(
+    dependencies=[Depends(validate_date_filters)],
     title=settings.PROJECT_NAME,
     version="1.0.0",
     description="Smart Transportation & Predictive Traffic Analytics Platform for Indian Metropolitan Cities",
@@ -42,7 +56,7 @@ app = FastAPI(
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all origins in development
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

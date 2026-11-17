@@ -259,7 +259,7 @@ class DataRepository:
         if end_date:
             try:
                 e_dt = datetime.datetime.fromisoformat(end_date)
-                query = query.filter(TrafficRecord.timestamp <= e_dt)
+                query = query.filter(TrafficRecord.timestamp < e_dt + datetime.timedelta(days=1))
             except Exception:
                 pass
 
@@ -601,13 +601,14 @@ class DataRepository:
             TrafficRecord.congestion_percentage.isnot(None)
         ).scalar() or 0
 
-        rate = round((complete_rows / total_traffic) * 100.0, 1) if total_traffic > 0 else 100.0
+        rate = round((complete_rows / total_traffic) * 100.0, 1) if total_traffic > 0 else 0.0
+        duplicates = self.db.query(TrafficRecord.location_id, TrafficRecord.timestamp, func.count(TrafficRecord.id).label("n")).group_by(TrafficRecord.location_id, TrafficRecord.timestamp).having(func.count(TrafficRecord.id) > 1).all()
         return {
             "total_gold_records": total_traffic,
             "completeness_rate": rate,
-            "duplicate_count": 0,
+            "duplicate_count": sum(row.n - 1 for row in duplicates),
             "target_definition": "Congestion Percentage: CP = ((v_free - v_obs) / v_free) * 100%",
-            "validation_status": "Verified against ground-truth GPS telemetry and spatial limits"
+            "validation_status": "Database structure checked; generated demonstration traffic, no verified GPS telemetry"
         }
 
     def get_data_coverage_stats(self) -> Dict[str, Any]:
@@ -619,8 +620,8 @@ class DataRepository:
 
         return {
             "cities_covered": city_names,
-            "start_date": min_ts.strftime("%Y-%m-%d") if min_ts else "2019-04-01",
-            "end_date": max_ts.strftime("%Y-%m-%d") if max_ts else "2019-12-31",
+            "start_date": min_ts.strftime("%Y-%m-%d") if min_ts else "",
+            "end_date": max_ts.strftime("%Y-%m-%d") if max_ts else "",
             "corridors_total": total_locs
         }
 
@@ -674,7 +675,7 @@ class DataRepository:
         if end_date:
             try:
                 e_dt = datetime.datetime.fromisoformat(end_date)
-                query = query.filter(TrafficRecord.timestamp <= e_dt)
+                query = query.filter(TrafficRecord.timestamp < e_dt + datetime.timedelta(days=1))
             except Exception:
                 pass
 
