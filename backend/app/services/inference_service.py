@@ -511,9 +511,9 @@ class InferenceService:
             baseline_val = self.predict_scalar("historical_mean", features)
             baseline_pct = round(baseline_val, 1)
         else:
-            baseline_pct = 24.1
+            baseline_pct = None
         
-        difference_pct = round(predicted_pct - baseline_pct, 1)
+        difference_pct = round(predicted_pct - baseline_pct, 1) if baseline_pct is not None else None
         category = explanation.get("congestion_category") or ("Low" if predicted_pct <= 25.0 else "Moderate" if predicted_pct <= 50.0 else "High" if predicted_pct <= 75.0 else "Severe")
 
         # 3. Model Metadata
@@ -531,9 +531,14 @@ class InferenceService:
         ]
 
         # 5. Confidence Interval from Model RMSE
-        rmse_val = float(model_info.get("rmse") or 3.5)
-        lower_bound = max(0.0, round(predicted_pct - 1.96 * rmse_val, 1))
-        upper_bound = min(100.0, round(predicted_pct + 1.96 * rmse_val, 1))
+        rmse_raw = model_info.get("rmse")
+        if rmse_raw is not None and np.isfinite(float(rmse_raw)) and float(rmse_raw) >= 0:
+            rmse_val = float(rmse_raw)
+            lower_bound = max(0.0, round(predicted_pct - 1.96 * rmse_val, 1))
+            upper_bound = min(100.0, round(predicted_pct + 1.96 * rmse_val, 1))
+            confidence_interval = {"lower": lower_bound, "upper": upper_bound, "method": "normal_approximation_from_test_rmse"}
+        else:
+            confidence_interval = None
 
         # 6. Formatted Timestamp
         p_date = prediction_date or "2026-11-17"
@@ -568,10 +573,7 @@ class InferenceService:
             "selected_model": model_type,
             "historical_baseline_pct": baseline_pct,
             "difference_pct": difference_pct,
-            "confidence_interval": {
-                "lower": lower_bound,
-                "upper": upper_bound,
-            },
+            "confidence_interval": confidence_interval,
             "input_features": features,
             "base_value": explanation.get("base_value"),
             "additive_check": explanation.get("additive_check"),
