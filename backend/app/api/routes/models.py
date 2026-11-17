@@ -80,19 +80,9 @@ def get_model_performance(db: Session = Depends(get_db)):
         primary_model = next((m for m in model_items if m["is_primary"]), None)
         best = primary_model or min(model_items, key=lambda x: x["mae"])
 
-    # Held-out actual vs predicted test samples
-    actual_vs_pred = [
-        {"index": 1, "timestamp": "2019-11-25 08:00", "actual": 68.5, "predicted": 67.2},
-        {"index": 2, "timestamp": "2019-11-25 12:00", "actual": 42.0, "predicted": 41.3},
-        {"index": 3, "timestamp": "2019-11-25 18:00", "actual": 76.4, "predicted": 75.8},
-        {"index": 4, "timestamp": "2019-11-26 09:00", "actual": 71.0, "predicted": 70.1},
-        {"index": 5, "timestamp": "2019-11-26 19:00", "actual": 79.2, "predicted": 79.9},
-        {"index": 6, "timestamp": "2019-11-27 18:00", "actual": 75.1, "predicted": 74.5},
-        {"index": 7, "timestamp": "2019-11-28 14:00", "actual": 38.6, "predicted": 38.9},
-        {"index": 8, "timestamp": "2019-11-29 18:00", "actual": 82.3, "predicted": 81.7},
-        {"index": 9, "timestamp": "2019-11-30 16:00", "actual": 51.0, "predicted": 50.4},
-        {"index": 10, "timestamp": "2019-12-01 12:00", "actual": 34.5, "predicted": 35.2},
-    ]
+    # No per-row held-out predictions are persisted by the training pipeline.
+    # Do not publish illustrative numbers as if they were measured test observations.
+    actual_vs_pred = []
 
     return {
         "models": model_items,

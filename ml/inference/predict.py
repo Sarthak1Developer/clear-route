@@ -17,7 +17,7 @@ class TrafficInferenceEngine:
         self.preprocessor = None
         self.models = {}
         self.shap_summary = {}
-        self.explainer = None
+        self.explainers = {}
         self.load_artifacts()
 
     def load_artifacts(self):
@@ -35,18 +35,21 @@ class TrafficInferenceEngine:
             with open(shap_path, "r") as f:
                 self.shap_summary = json.load(f)
 
-        # Initialize TreeExplainer on primary model if available
-        try:
-            if "xgboost" in self.models and self.preprocessor:
-                feat_names = self.preprocessor.get("feature_names", [])
-                self.explainer = TrafficShapExplainer(
-                    model=self.models["xgboost"],
+        # Build an explainer per supported tree model. Never reuse XGBoost
+        # attributions for a prediction produced by a different estimator.
+        feat_names = self.preprocessor.get("feature_names", []) if self.preprocessor else []
+        for model_key in ("xgboost", "random_forest"):
+            if model_key not in self.models or self.preprocessor is None:
+                continue
+            try:
+                self.explainers[model_key] = TrafficShapExplainer(
+                    model=self.models[model_key],
                     feature_names=feat_names,
-                    model_id="xgboost",
+                    model_id=model_key,
                     artifacts_dir=self.artifacts_dir
                 )
-        except Exception:
-            self.explainer = None
+            except Exception:
+                self.explainers.pop(model_key, None)
 
     def _prepare_input_matrix(self, input_features: dict) -> np.ndarray:
         df_input = pd.DataFrame([input_features])
@@ -63,14 +66,18 @@ class TrafficInferenceEngine:
                     int(input_features.get("day_of_week", 0)),
                     int(input_features.get("hour", 0))
                 ))
-            return 25.0
+            raise RuntimeError("Historical Mean model artifact is missing; prediction was not generated.")
 
         model = self.models.get(model_key)
-        if not model or not self.preprocessor:
-            return 25.0
+        if not model:
+            raise RuntimeError(f"Model artifact '{model_key}' is missing; prediction was not generated.")
+        if not self.preprocessor:
+            raise RuntimeError("Preprocessor artifact is missing; prediction was not generated.")
 
         X = self._prepare_input_matrix(input_features)
         pred = model.predict(X)[0]
+        if pred is None or not np.isfinite(pred):
+            raise ValueError(f"Model '{model_key}' produced an invalid prediction: {pred}")
         return float(np.clip(pred, 0.0, 100.0))
 
     def predict_with_explanation(self, model_key: str, input_features: dict, prediction_id: str = None) -> dict:
@@ -79,21 +86,25 @@ class TrafficInferenceEngine:
         """
         predicted_val = self.predict(model_key, input_features)
 
-        if not self.explainer or not self.preprocessor:
+        if model_key not in self.explainers or not self.preprocessor:
             return {
                 "prediction_id": prediction_id,
                 "model_id": model_key,
                 "predicted_congestion": round(predicted_val, 2),
-                "base_value": 24.05,
+                "base_value": None,
                 "feature_contributions": [],
-                "explanation_summary": f"Congestion predicted at {predicted_val:.1f}%. SHAP explainer uninitialized.",
+                "explanation_status": "unavailable",
+                "explanation_summary": (
+                    f"Congestion predicted at {predicted_val:.1f}%. "
+                    "A model-specific explainer is not available; no other model's explanation was substituted."
+                ),
                 "feature_values": input_features,
             }
 
         X = self._prepare_input_matrix(input_features)
         x_inst = X[0]
 
-        explanation = self.explainer.explain_instance(
+        explanation = self.explainers[model_key].explain_instance(
             x_instance=x_inst,
             raw_features_dict=input_features,
             prediction_id=prediction_id

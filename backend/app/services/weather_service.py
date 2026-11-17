@@ -111,20 +111,24 @@ class WeatherService:
 
         if location_id:
             loc = repo.get_location_by_code(location_id)
-            if loc:
-                target_location = loc
-                if loc.city:
-                    target_city = loc.city.city_name
+            if not loc or not loc.city:
+                raise ValueError(f"Unknown corridor '{location_id}'.")
+            target_location = loc
+            target_city = loc.city.city_name
         elif city_name:
             city_obj = repo.get_city_by_name(city_name)
-            if city_obj:
-                target_city = city_obj.city_name
-            else:
-                target_city = city_name
+            if not city_obj:
+                supported = ", ".join(sorted(CITY_COORDINATES))
+                raise ValueError(f"Unsupported city '{city_name}'. Supported cities: {supported}.")
+            target_city = city_obj.city_name
 
-        coords = CITY_COORDINATES.get(target_city, (28.6139, 77.2090))
         city_obj = repo.get_city_by_name(target_city)
-        city_id = city_obj.id if city_obj else 1
+        if not city_obj:
+            raise ValueError(f"City '{target_city}' is not available in the database.")
+        coords = CITY_COORDINATES.get(target_city)
+        if coords is None:
+            raise ValueError(f"No weather coordinates configured for '{target_city}'.")
+        city_id = city_obj.id
 
         # 2. If historical date is explicitly requested, query DB directly
         if date_str:

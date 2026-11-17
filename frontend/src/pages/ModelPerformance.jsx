@@ -153,9 +153,10 @@ export const ModelPerformance = () => {
           title="Actual vs Predicted Congestion (Test Partition)"
           subtitle="Held-out sample actual traffic congestion % vs XGBoost predictions"
         >
+          {performanceData.actual_vs_predicted?.length ? (
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={performanceData.actual_vs_predicted || []} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+              <LineChart data={performanceData.actual_vs_predicted} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
                 <XAxis dataKey="index" stroke="#9CA3AF" tick={{ fontSize: 10 }} label={{ value: 'Test Instances (Chronological)', position: 'insideBottom', offset: -10, fill: '#6B7280', fontSize: 10 }} />
                 <YAxis stroke="#9CA3AF" tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
@@ -181,6 +182,11 @@ export const ModelPerformance = () => {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          ) : (
+            <div className="h-72 flex items-center justify-center text-center text-sm text-slate-400 px-6">
+              Per-row held-out predictions have not been saved by the training pipeline. Run a test-set export before displaying this chart.
+            </div>
+          )}
         </Card>
 
         {/* Global Feature Importance */}

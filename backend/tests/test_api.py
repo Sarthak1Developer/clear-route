@@ -266,10 +266,10 @@ def test_weather_endpoints():
     assert "Open-Meteo ERA5" in dw_data["source"]
 
     # Graceful handling of unknown city
+    # Unsupported cities must not silently receive Delhi's live weather.
     res_unknown = client.get("/api/weather?city=Atlantis")
-    assert res_unknown.status_code == 200
-    un_data = res_unknown.json()
-    assert un_data["provider_available"] is False
+    assert res_unknown.status_code == 404
+    assert "Unsupported city" in res_unknown.json()["detail"]
 
 # -----------------------------------------------------------------------------
 # 7. Model Benchmarking, SHAP & Explainability
@@ -282,7 +282,7 @@ def test_models_endpoints():
     assert len(p_data["models"]) == 4
     assert p_data["best_model"]["key"] in ["historical_mean", "xgboost"]
     assert p_data["best_model"]["key"] == "historical_mean"  # Validated against metrics.json held-out benchmarks
-    assert len(p_data["actual_vs_predicted"]) == 10
+    assert p_data["actual_vs_predicted"] == []  # No persisted test-row export: never fabricate chart points
 
     # Feature Importance from SHAP summary
     res_feat = client.get("/api/models/feature-importance")
