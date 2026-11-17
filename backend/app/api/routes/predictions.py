@@ -127,6 +127,50 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
 
     return pred_result
 
+
+@router.post("/predict/compare", summary="Run all available congestion models against the same scenario")
+def compare_congestion_models(req: PredictionRequest, db: Session = Depends(get_db)):
+    """
+    Runs each available estimator against the exact same validated scenario.
+    Individual model failures are reported explicitly; no substitute prediction is generated.
+    """
+    model_keys = ["xgboost", "random_forest", "linear_regression", "historical_mean"]
+    results = []
+    for model_key in model_keys:
+        if not inference_service.is_model_available(model_key):
+            results.append({
+                "model": model_key,
+                "status": "unavailable",
+                "error": f"Model '{model_key}' or its required preprocessing artifact is not loaded."
+            })
+            continue
+        try:
+            model_request = req.model_copy(update={"model_type": model_key})
+            result = predict_congestion(model_request, db)
+            results.append({"model": model_key, "status": "success", "result": result})
+        except HTTPException as exc:
+            results.append({
+                "model": model_key,
+                "status": "error",
+                "error": str(exc.detail),
+                "http_status": exc.status_code
+            })
+
+    successful = [item for item in results if item["status"] == "success"]
+    if not successful:
+        raise HTTPException(status_code=503, detail={
+            "message": "No model could produce a valid prediction.",
+            "results": results
+        })
+
+    return {
+        "status": "partial_success" if len(successful) != len(model_keys) else "success",
+        "models_requested": len(model_keys),
+        "models_succeeded": len(successful),
+        "best_model_by_held_out_metrics": inference_service.get_best_model_key(),
+        "results": results
+    }
+
 @router.post("/predict/explain", response_model=PredictionExplanationResponse, summary="Generate detailed individual SHAP attribution breakdown conforming to contract")
 @router.post("/predictions/explain", response_model=PredictionExplanationResponse, include_in_schema=False)
 def explain_congestion_prediction(req: PredictionRequest, db: Session = Depends(get_db)):
