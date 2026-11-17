@@ -422,7 +422,7 @@ export const CongestionPrediction = () => {
                         predictionResult.difference_pct >= 0 ? 'text-rose-400' : 'text-emerald-400'
                       }`}
                     >
-                      {predictionResult.difference_pct >= 0 ? `+${predictionResult.difference_pct.toFixed(1)}%` : `${predictionResult.difference_pct.toFixed(1)}%`}
+                      {Number.isFinite(predictionResult.difference_pct) ? (predictionResult.difference_pct >= 0 ? `+${predictionResult.difference_pct.toFixed(1)}%` : `${predictionResult.difference_pct.toFixed(1)}%`) : 'N/A'}
                     </p>
                   </div>
                 </div>
