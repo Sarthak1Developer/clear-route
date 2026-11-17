@@ -266,10 +266,10 @@ def test_weather_endpoints():
     assert "Open-Meteo ERA5" in dw_data["source"]
 
     # Graceful handling of unknown city
+    # Unsupported cities must not silently receive Delhi's live weather.
     res_unknown = client.get("/api/weather?city=Atlantis")
-    assert res_unknown.status_code == 200
-    un_data = res_unknown.json()
-    assert un_data["provider_available"] is False
+    assert res_unknown.status_code == 404
+    assert "Unsupported city" in res_unknown.json()["detail"]
 
 # -----------------------------------------------------------------------------
 # 7. Model Benchmarking, SHAP & Explainability
