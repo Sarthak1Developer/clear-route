@@ -30,6 +30,7 @@ import matplotlib
 matplotlib.use("Agg")  # Non-interactive backend
 import matplotlib.pyplot as plt
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - %(message)s")
 logger = logging.getLogger("clearroute.ml.shap")
 
 # Domain Feature Taxonomy for Aggregated Attribution

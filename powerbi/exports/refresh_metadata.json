@@ -1,0 +1,17 @@
+{
+  "refresh_timestamp_utc": "2026-11-17T13:50:18.515957+00:00",
+  "refresh_date": "2026-11-17",
+  "source_dataset": "C:\\Users\\aurian\\Downloads\\clear-route-main\\data\\gold\\master_congestion\\gold_master_congestion.parquet",
+  "source_dataset_records": 165000,
+  "temporal_range_start": "2019-04-01 00:00:00",
+  "temporal_range_end": "2019-12-31 23:00:00",
+  "metropolitan_cities_count": 5,
+  "corridors_monitored_count": 25,
+  "models_evaluated_count": 4,
+  "champion_model_key": "historical_mean",
+  "champion_model_name": "Historical Mean Baseline",
+  "champion_test_mae": 2.675,
+  "champion_test_rmse": 3.405,
+  "champion_test_r2": 0.9722,
+  "pipeline_status": "SUCCESS"
+}

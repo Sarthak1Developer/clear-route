@@ -1,0 +1,2 @@
+refresh_timestamp_utc,refresh_date,source_dataset,source_dataset_records,temporal_range_start,temporal_range_end,metropolitan_cities_count,corridors_monitored_count,models_evaluated_count,champion_model_key,champion_model_name,champion_test_mae,champion_test_rmse,champion_test_r2,pipeline_status
+2026-11-17T13:50:18.515957+00:00,2026-11-17,C:\Users\aurian\Downloads\clear-route-main\data\gold\master_congestion\gold_master_congestion.parquet,165000,2019-04-01 00:00:00,2019-12-31 23:00:00,5,25,4,historical_mean,Historical Mean Baseline,2.675,3.405,0.9722,SUCCESS

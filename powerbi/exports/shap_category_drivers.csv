@@ -1,0 +1,6 @@
+category_key,category_name,driver_narrative,priority_rank
+time_of_day_driver,Time of Day (Diurnal Cycle),"Peak diurnal commuter rush (08:00-11:00 and 17:00-21:00) represents the dominant positive driver, lifting congestion by 12-18% above network baseline.",1
+traffic_history_driver,Traffic History & Autoregressive Lag,"Prior 1-hour lag speed and 3-hour rolling average provide strong autoregressive anchoring, dampening or amplifying delays based on existing network saturation.",2
+road_characteristics_driver,Road Infrastructure & Geometry,"Physical road carriageway width (>6 lanes) acts as a structural congestion dampener (-3% to -8%), whereas high accident hazard index increases delay variance.",3
+weather_condition_driver,Weather & Monsoon Precipitation,Precipitation (>5 mm/hr) and active rain flags consistently elevate congestion by 4-9% due to wet pavement friction and reduced speed thresholds.,4
+events_and_holidays_driver,Special Events & Cultural Gatherings,"Major festivals and assemblies (Durga Puja, Ganesh Visarjan, Diwali) introduce acute localized congestion spikes of +8% to +16% during scheduled assembly intervals.",5

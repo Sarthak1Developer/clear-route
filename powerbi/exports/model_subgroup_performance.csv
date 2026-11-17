@@ -1,0 +1,61 @@
+model_key,model_name,slice_type,slice_name,samples,mae,rmse,r2
+historical_mean,Historical Mean Baseline,City,Bengaluru,4950,2.667,3.414,0.9725
+historical_mean,Historical Mean Baseline,City,Delhi,4950,2.794,3.514,0.9706
+historical_mean,Historical Mean Baseline,City,Hyderabad,4950,2.688,3.444,0.9721
+historical_mean,Historical Mean Baseline,City,Kolkata,4950,2.872,3.665,0.9675
+historical_mean,Historical Mean Baseline,City,Mumbai,4950,2.352,2.944,0.9782
+linear_regression,Linear Regression (Ridge),City,Bengaluru,4950,8.213,10.376,0.7457
+linear_regression,Linear Regression (Ridge),City,Delhi,4950,10.276,13.307,0.5785
+linear_regression,Linear Regression (Ridge),City,Hyderabad,4950,8.032,10.349,0.7479
+linear_regression,Linear Regression (Ridge),City,Kolkata,4950,8.54,10.924,0.711
+linear_regression,Linear Regression (Ridge),City,Mumbai,4950,8.168,10.338,0.7309
+random_forest,Random Forest Regressor,City,Bengaluru,4950,4.628,6.107,0.9119
+random_forest,Random Forest Regressor,City,Delhi,4950,5.013,6.482,0.9
+random_forest,Random Forest Regressor,City,Hyderabad,4950,4.703,6.214,0.9091
+random_forest,Random Forest Regressor,City,Kolkata,4950,4.812,6.318,0.9034
+random_forest,Random Forest Regressor,City,Mumbai,4950,4.283,5.613,0.9207
+xgboost,XGBoost Regressor,City,Bengaluru,4950,2.715,3.451,0.9719
+xgboost,XGBoost Regressor,City,Delhi,4950,2.825,3.563,0.9698
+xgboost,XGBoost Regressor,City,Hyderabad,4950,2.772,3.555,0.9702
+xgboost,XGBoost Regressor,City,Kolkata,4950,2.913,3.705,0.9668
+xgboost,XGBoost Regressor,City,Mumbai,4950,2.409,3.006,0.9772
+historical_mean,Historical Mean Baseline,Traffic Condition,Peak Hours (08-11 & 17-21),9325,2.738,3.493,0.9684
+historical_mean,Historical Mean Baseline,Traffic Condition,Off-Peak Hours,15425,2.636,3.351,0.9254
+historical_mean,Historical Mean Baseline,Traffic Condition,Weekdays (Mon-Fri),17550,2.669,3.395,0.9758
+historical_mean,Historical Mean Baseline,Traffic Condition,Weekends (Sat-Sun),7200,2.688,3.429,0.953
+historical_mean,Historical Mean Baseline,Traffic Condition,Rainy Weather (>0.5mm),195,2.778,3.461,0.972
+historical_mean,Historical Mean Baseline,Traffic Condition,Dry Weather (<=0.5mm),24555,2.674,3.404,0.9722
+historical_mean,Historical Mean Baseline,Traffic Condition,Low Congestion (0-25%),14414,2.582,3.284,0.8031
+historical_mean,Historical Mean Baseline,Traffic Condition,Moderate Congestion (26-50%),6822,2.791,3.546,0.7675
+historical_mean,Historical Mean Baseline,Traffic Condition,High Congestion (51-75%),3398,2.721,3.469,0.7299
+historical_mean,Historical Mean Baseline,Traffic Condition,Severe Congestion (>75%),116,5.991,6.437,-14.3017
+linear_regression,Linear Regression (Ridge),Traffic Condition,Peak Hours (08-11 & 17-21),9325,12.476,14.613,0.4475
+linear_regression,Linear Regression (Ridge),Traffic Condition,Off-Peak Hours,15425,6.331,8.321,0.5399
+linear_regression,Linear Regression (Ridge),Traffic Condition,Weekdays (Mon-Fri),17550,8.532,10.981,0.7471
+linear_regression,Linear Regression (Ridge),Traffic Condition,Weekends (Sat-Sun),7200,8.924,11.445,0.4761
+linear_regression,Linear Regression (Ridge),Traffic Condition,Rainy Weather (>0.5mm),195,9.289,11.612,0.6849
+linear_regression,Linear Regression (Ridge),Traffic Condition,Dry Weather (<=0.5mm),24555,8.641,11.114,0.704
+linear_regression,Linear Regression (Ridge),Traffic Condition,Low Congestion (0-25%),14414,7.084,9.481,-0.6408
+linear_regression,Linear Regression (Ridge),Traffic Condition,Moderate Congestion (26-50%),6822,9.815,12.015,-1.6697
+linear_regression,Linear Regression (Ridge),Traffic Condition,High Congestion (51-75%),3398,12.448,14.504,-3.7209
+linear_regression,Linear Regression (Ridge),Traffic Condition,Severe Congestion (>75%),116,22.661,23.486,-202.7144
+random_forest,Random Forest Regressor,Traffic Condition,Peak Hours (08-11 & 17-21),9325,6.854,8.29,0.8222
+random_forest,Random Forest Regressor,Traffic Condition,Off-Peak Hours,15425,3.378,4.383,0.8723
+random_forest,Random Forest Regressor,Traffic Condition,Weekdays (Mon-Fri),17550,4.527,5.933,0.9262
+random_forest,Random Forest Regressor,Traffic Condition,Weekends (Sat-Sun),7200,5.081,6.661,0.8226
+random_forest,Random Forest Regressor,Traffic Condition,Rainy Weather (>0.5mm),195,5.16,6.68,0.8957
+random_forest,Random Forest Regressor,Traffic Condition,Dry Weather (<=0.5mm),24555,4.684,6.149,0.9094
+random_forest,Random Forest Regressor,Traffic Condition,Low Congestion (0-25%),14414,4.018,5.586,0.4304
+random_forest,Random Forest Regressor,Traffic Condition,Moderate Congestion (26-50%),6822,4.618,5.707,0.3978
+random_forest,Random Forest Regressor,Traffic Condition,High Congestion (51-75%),3398,7.284,8.314,-0.5511
+random_forest,Random Forest Regressor,Traffic Condition,Severe Congestion (>75%),116,15.964,16.192,-95.8311
+xgboost,XGBoost Regressor,Traffic Condition,Peak Hours (08-11 & 17-21),9325,2.837,3.612,0.9662
+xgboost,XGBoost Regressor,Traffic Condition,Off-Peak Hours,15425,2.66,3.372,0.9244
+xgboost,XGBoost Regressor,Traffic Condition,Weekdays (Mon-Fri),17550,2.69,3.412,0.9756
+xgboost,XGBoost Regressor,Traffic Condition,Weekends (Sat-Sun),7200,2.816,3.589,0.9485
+xgboost,XGBoost Regressor,Traffic Condition,Rainy Weather (>0.5mm),195,2.787,3.528,0.9709
+xgboost,XGBoost Regressor,Traffic Condition,Dry Weather (<=0.5mm),24555,2.726,3.464,0.9712
+xgboost,XGBoost Regressor,Traffic Condition,Low Congestion (0-25%),14414,2.61,3.316,0.7993
+xgboost,XGBoost Regressor,Traffic Condition,Moderate Congestion (26-50%),6822,2.859,3.612,0.7587
+xgboost,XGBoost Regressor,Traffic Condition,High Congestion (51-75%),3398,2.837,3.613,0.7071
+xgboost,XGBoost Regressor,Traffic Condition,Severe Congestion (>75%),116,6.312,6.723,-15.6942

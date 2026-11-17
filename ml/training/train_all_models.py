@@ -390,7 +390,8 @@ def train_and_validate_all_models(
         explainer = TrafficShapExplainer(chosen_tree_model, preprocessor.feature_names)
         shap_sample = X_test[:250]
         global_importance = explainer.compute_global_importance(shap_sample)
-        explainer.save_summary(global_importance, os.path.join(artifacts_dir, "shap_summary.json"))
+        with open(os.path.join(artifacts_dir, "shap_summary.json"), "w") as f:
+            json.dump({"global_importance": global_importance, "base_value": explainer.base_value}, f, indent=2)
         logger.info(f"SHAP summary computed ({len(global_importance)} features).")
     except Exception as e:
         logger.warning(f"Could not compute SHAP values directly: {e}")

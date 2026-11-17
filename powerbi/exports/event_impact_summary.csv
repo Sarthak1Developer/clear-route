@@ -1,6 +1,6 @@
 event_type,event_present,mean_congestion_pct,mean_speed_kmh,sample_count
 Assembly,1,26.7,40.4,240
 Festival,1,23.07,42.8,1440
-None,0,24.05,42.2,162480
+No Event,0,24.05,42.2,162480
 Public Holiday,1,25.24,40.8,600
 Sports,1,24.34,42.3,240

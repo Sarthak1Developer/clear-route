@@ -1,0 +1,32 @@
+feature_name,display_name,category,shap_importance_pct,xgboost_importance,random_forest_importance,ridge_coefficient
+hour,Hour of Day (Diurnal Cycle),Time Of Day,10.3987,0.08507,0.2967,5.9895
+is_peak_hour,Peak Commute Rush Window,Time Of Day,4.4211,0.76415,0.24101,12.6076
+lag_speed_1h,Corridor Speed 1-Hour Prior (t-1),Traffic History,3.6736,0.02423,0.18471,-20.7311
+day_of_week,Day of Week (Weekday vs Weekend),Time Of Day,2.0273,0.03034,0.03269,-0.2455
+road_lanes,Carriageway Lane Capacity,Road Characteristics,1.9995,0.00766,0.00806,-3.468
+rolling_speed_3h,Rolling Mean Speed (Prior 3 Hours),Traffic History,0.6886,0.00627,0.0965,16.7997
+accident_risk_score,MoRTH Contextual Accident Hazard,Road Characteristics,0.3374,0.00038,0.00192,0.6558
+is_weekend,Weekend Leisure Schedule,Time Of Day,0.3135,0.03339,0.02958,-5.0188
+free_flow_speed_kmh,Design Free-Flow Speed (km/h),Road Characteristics,0.213,0.00932,0.01535,0.6666
+relative_humidity_2m_pct,Relative Atmospheric Humidity (%),Weather Condition,0.1033,0.00183,0.03377,-0.5742
+temperature_2m_c,Ambient Air Temperature (°C),Weather Condition,0.1008,0.00235,0.02838,3.1143
+length_m,Physical Segment Length (m),Road Characteristics,0.0871,0.00221,0.00778,0.7843
+city_Kolkata,Kolkata Metropolitan Core,Spatial Location,0.0712,0.00082,0.0011,-0.8413
+precipitation_mm,Precipitation Rate (mm/hr),Weather Condition,0.0622,0.0011,0.00447,0.0311
+city_Hyderabad,Hyderabad Cyberabad Region,Spatial Location,0.0498,0.00026,0.00051,-0.0511
+month,Seasonal Month,Time Of Day,0.0206,0.00018,0.00305,1.2596
+road_type_trunk,High-Capacity Expressway / Trunk,Road Characteristics,0.0182,0.02374,0.00383,-0.0223
+wind_speed_10m_kmh,Surface Wind Velocity (km/h),Weather Condition,0.0159,7e-05,0.00486,0.6213
+city_Mumbai,Mumbai MMR Corridor,Spatial Location,0.0092,0.00104,0.00084,0.0805
+road_type_primary,Primary Arterial Corridor,Road Characteristics,0.006,0.00017,0.00144,-0.1979
+city_Delhi,Delhi NCT Capital Region,Spatial Location,0.005,0.00017,0.00049,-1.4978
+city_Bengaluru,Bengaluru Metropolitan Region,Spatial Location,0.0044,0.0023,0.00092,2.3096
+is_raining,Active Rainfall Indicator,Weather Condition,0.0021,0.00046,0.0008,1.3445
+road_type_secondary,Secondary Commercial Road,Road Characteristics,0.0014,0.00234,0.00107,0.2203
+event_intensity,Event Congestion Intensity Factor,Events And Holidays,0.0002,5e-05,5e-05,-0.1837
+is_holiday,Gazetted Public Holiday,Events And Holidays,0.0002,4e-05,2e-05,0.1776
+event_type_Festival,Major Religious / Cultural Festival,Events And Holidays,0.0001,5e-05,1e-05,0.3657
+event_type_Public Holiday,Event Type Public Holiday,Events And Holidays,0.0,4e-05,0.0,0.2887
+event_type_Sports,Stadium Sporting Match,Events And Holidays,0.0,0.0,0.0,0.1788
+event_type_None,Event Type None,Events And Holidays,0.0,0.0,4e-05,-0.8332
+event_present,Active Cultural / Stadium Event,Events And Holidays,0.0,0.0,4e-05,0.8332

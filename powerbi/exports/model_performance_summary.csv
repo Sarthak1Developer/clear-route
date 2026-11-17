@@ -1,5 +1,5 @@
-model_key,model_name,algorithm_family,mae,rmse,r2_score,is_champion
-historical_mean,Historical Mean Baseline,Spatio-Temporal Segment Lookup,2.675,3.405,0.9722,1
-linear_regression,Linear Regression (Ridge),Regularized Parametric Estimator,8.646,11.118,0.7038,0
-random_forest,Random Forest Regressor,Multi-Tree Bagging Ensemble,4.688,6.154,0.9093,0
-xgboost,XGBoost Regressor,Gradient Boosted Trees,2.727,3.464,0.9712,0
+model_key,model_name,algorithm_family,role,mae,rmse,r2_score,is_champion
+historical_mean,Historical Mean Baseline,Spatio-Temporal Segment Lookup,Statistical Baseline,2.675,3.405,0.9722,1
+xgboost,XGBoost Regressor,Gradient Boosted Trees,Primary Forecasting Model,2.727,3.464,0.9712,0
+random_forest,Random Forest Regressor,Multi-Tree Bagging Ensemble,Non-linear Ensemble,4.688,6.154,0.9093,0
+linear_regression,Linear Regression (Ridge),Regularized Parametric Estimator,Interpretable Baseline,8.646,11.118,0.7038,0

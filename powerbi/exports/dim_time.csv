@@ -1,0 +1,25 @@
+hour,time_key,time_label,period_of_day,is_peak_hour,peak_period_name
+0,0,00:00,Late Night (00:00-06:00),0,Off-Peak
+1,1,01:00,Late Night (00:00-06:00),0,Off-Peak
+2,2,02:00,Late Night (00:00-06:00),0,Off-Peak
+3,3,03:00,Late Night (00:00-06:00),0,Off-Peak
+4,4,04:00,Late Night (00:00-06:00),0,Off-Peak
+5,5,05:00,Late Night (00:00-06:00),0,Off-Peak
+6,6,06:00,Late Night (00:00-06:00),0,Off-Peak
+7,7,07:00,Morning Rush (07:00-11:00),0,Off-Peak
+8,8,08:00,Morning Rush (07:00-11:00),1,Morning Peak (08:00-11:00)
+9,9,09:00,Morning Rush (07:00-11:00),1,Morning Peak (08:00-11:00)
+10,10,10:00,Morning Rush (07:00-11:00),1,Morning Peak (08:00-11:00)
+11,11,11:00,Morning Rush (07:00-11:00),1,Morning Peak (08:00-11:00)
+12,12,12:00,Midday (12:00-16:00),0,Off-Peak
+13,13,13:00,Midday (12:00-16:00),0,Off-Peak
+14,14,14:00,Midday (12:00-16:00),0,Off-Peak
+15,15,15:00,Midday (12:00-16:00),0,Off-Peak
+16,16,16:00,Midday (12:00-16:00),0,Off-Peak
+17,17,17:00,Evening Rush (17:00-21:00),1,Evening Peak (17:00-21:00)
+18,18,18:00,Evening Rush (17:00-21:00),1,Evening Peak (17:00-21:00)
+19,19,19:00,Evening Rush (17:00-21:00),1,Evening Peak (17:00-21:00)
+20,20,20:00,Evening Rush (17:00-21:00),1,Evening Peak (17:00-21:00)
+21,21,21:00,Evening Rush (17:00-21:00),1,Evening Peak (17:00-21:00)
+22,22,22:00,Night (22:00-23:00),0,Off-Peak
+23,23,23:00,Night (22:00-23:00),0,Off-Peak

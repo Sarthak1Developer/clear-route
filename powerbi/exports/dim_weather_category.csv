@@ -1,0 +1,5 @@
+rain_category,precip_min_mm,precip_max_mm,weather_severity,advisory_level
+Dry (<0.5mm),0.0,0.5,Normal,Green - Optimal Traction
+Light Rain (0.5-5mm),0.5,5.0,Moderate,Yellow - Wet Pavement Caution
+Moderate Rain (5-15mm),5.0,15.0,High,Amber - Surface Water Delay
+Heavy Monsoon (>15mm),15.0,150.0,Severe,Red - Monsoon Inundation Alert
