@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.database.session import get_db, SessionLocal
 from backend.app.services.weather_service import WeatherService
@@ -31,12 +31,15 @@ def get_weather(
     date_str = date if isinstance(date, str) else None
 
     service = WeatherService(db)
-    return service.get_current_and_forecast_weather(
-        db=db,
-        city_name=city_str,
-        location_id=loc_id,
-        date_str=date_str
-    )
+    try:
+        return service.get_current_and_forecast_weather(
+            db=db,
+            city_name=city_str,
+            location_id=loc_id,
+            date_str=date_str
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 @router.get("/weather/history", response_model=WeatherHistoryResponse, summary="Query historical weather observations from database")
 def get_weather_history(
