@@ -93,7 +93,7 @@ export const Overview = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Cities Monitored"
-          value={data.total_cities || 5}
+          value={Number.isFinite(data.total_cities) ? data.total_cities : 'N/A'}
           unit="Metros"
           icon={Building2}
           accentColor="cyan"
@@ -101,7 +101,7 @@ export const Overview = () => {
         />
         <MetricCard
           title="Monitored Road Corridors"
-          value={data.total_locations || 25}
+          value={Number.isFinite(data.total_locations) ? data.total_locations : 'N/A'}
           unit="Corridors"
           icon={MapPin}
           accentColor="blue"
@@ -109,18 +109,18 @@ export const Overview = () => {
         />
         <MetricCard
           title="Network Avg Congestion"
-          value={`${(data.avg_congestion_pct || 46.2).toFixed(1)}%`}
+          value={Number.isFinite(data.avg_congestion_pct) ? `${data.avg_congestion_pct.toFixed(1)}%` : 'N/A'}
           icon={Gauge}
           accentColor="amber"
-          description={`Highest: ${data.most_congested_city || 'Bengaluru'}`}
+          description={`Highest: ${data.most_congested_city || 'N/A'}`}
         />
         <MetricCard
           title="Dataset Temporal Range"
-          value="9 Months"
+          value={data.historical_coverage || 'N/A'}
           unit="2019 Baseline"
           icon={Calendar}
           accentColor="emerald"
-          description={`${data.total_records_processed?.toLocaleString() || '184,500'} hourly readings`}
+          description={`${Number.isFinite(data.total_records_processed) ? data.total_records_processed.toLocaleString() : 'N/A'} traffic records`}
         />
       </div>
 
