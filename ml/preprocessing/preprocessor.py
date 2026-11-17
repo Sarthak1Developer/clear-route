@@ -1,3 +1,9 @@
+"""
+ClearRoute Machine Learning Preprocessing Pipeline
+Standardizes continuous numerical features, one-hot encodes categoricals,
+and preserves binary flags. Preprocessing is strictly fit on the training split only.
+"""
+
 import os
 import joblib
 import pandas as pd
@@ -11,9 +17,9 @@ class TrafficDataPreprocessor:
             "hour", "day_of_week", "month", "temperature_2m_c",
             "precipitation_mm", "relative_humidity_2m_pct", "wind_speed_10m_kmh",
             "road_lanes", "length_m", "accident_risk_score",
-            "free_flow_speed_kmh", "lag_speed_1h", "rolling_speed_3h"
+            "free_flow_speed_kmh", "event_intensity", "lag_speed_1h", "rolling_speed_3h"
         ]
-        self.cat_features = ["road_type", "event_type"]
+        self.cat_features = ["road_type", "event_type", "city"]
         self.binary_features = ["is_weekend", "is_peak_hour", "is_holiday", "event_present", "is_raining"]
         self.target_col = "congestion_percentage"
         
@@ -23,7 +29,7 @@ class TrafficDataPreprocessor:
     def chronological_split(self, df: pd.DataFrame, train_ratio: float = 0.70, val_ratio: float = 0.15):
         """
         Performs strict chronological splitting (70% train, 15% val, 15% test)
-        to prevent temporal data leakage and preserve time-series ordering.
+        to prevent temporal data leakage and preserve real time-series causality.
         """
         df = df.sort_values(by="timestamp").reset_index(drop=True)
         n = len(df)
@@ -36,7 +42,52 @@ class TrafficDataPreprocessor:
 
         return train_df, val_df, test_df
 
+    def _impute_inference_defaults(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Safely imputes expected feature defaults if called with incomplete inference payloads."""
+        df = df.copy()
+        defaults_num = {
+            "hour": 12, "day_of_week": 0, "month": 6,
+            "temperature_2m_c": 28.0, "precipitation_mm": 0.0,
+            "relative_humidity_2m_pct": 60.0, "wind_speed_10m_kmh": 12.0,
+            "road_lanes": 6, "length_m": 2500.0, "accident_risk_score": 0.55,
+            "free_flow_speed_kmh": 55.0, "event_intensity": 0.0,
+        }
+        for col, val in defaults_num.items():
+            if col not in df.columns:
+                df[col] = val
+            else:
+                df[col] = df[col].fillna(val)
+
+        # Lags default to free-flow baseline if not supplied during forward inference
+        if "lag_speed_1h" not in df.columns:
+            df["lag_speed_1h"] = df["free_flow_speed_kmh"]
+        else:
+            df["lag_speed_1h"] = df["lag_speed_1h"].fillna(df["free_flow_speed_kmh"])
+
+        if "rolling_speed_3h" not in df.columns:
+            df["rolling_speed_3h"] = df["free_flow_speed_kmh"]
+        else:
+            df["rolling_speed_3h"] = df["rolling_speed_3h"].fillna(df["free_flow_speed_kmh"])
+
+        defaults_cat = {"road_type": "primary", "event_type": "None", "city": "Delhi"}
+        for col, val in defaults_cat.items():
+            if col not in df.columns:
+                df[col] = val
+            else:
+                df[col] = df[col].fillna(val)
+
+        defaults_bin = ["is_weekend", "is_peak_hour", "is_holiday", "event_present", "is_raining"]
+        for col in defaults_bin:
+            if col not in df.columns:
+                df[col] = 0
+            else:
+                df[col] = df[col].fillna(0).astype(int)
+
+        return df
+
     def fit_transform(self, train_df: pd.DataFrame):
+        train_df = self._impute_inference_defaults(train_df)
+        
         self.preprocessor = ColumnTransformer(
             transformers=[
                 ("num", StandardScaler(), self.num_features),
@@ -48,22 +99,34 @@ class TrafficDataPreprocessor:
         X_train = self.preprocessor.fit_transform(train_df)
         y_train = train_df[self.target_col].values
 
-        # Build feature names list
+        # Build human-readable feature names list
         cat_names = self.preprocessor.named_transformers_["cat"].get_feature_names_out(self.cat_features).tolist()
         self.feature_names = self.num_features + cat_names + self.binary_features
 
         return X_train, y_train
 
     def transform(self, df: pd.DataFrame):
-        X = self.preprocessor.transform(df)
+        df_imputed = self._impute_inference_defaults(df)
+        X = self.preprocessor.transform(df_imputed)
         y = df[self.target_col].values if self.target_col in df.columns else None
         return X, y
 
     def save(self, filepath: str = "ml/artifacts/preprocessor.joblib"):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        joblib.dump({"preprocessor": self.preprocessor, "feature_names": self.feature_names}, filepath)
+        joblib.dump({
+            "preprocessor": self.preprocessor,
+            "feature_names": self.feature_names,
+            "num_features": self.num_features,
+            "cat_features": self.cat_features,
+            "binary_features": self.binary_features,
+            "target_col": self.target_col
+        }, filepath)
 
     def load(self, filepath: str = "ml/artifacts/preprocessor.joblib"):
         data = joblib.load(filepath)
         self.preprocessor = data["preprocessor"]
         self.feature_names = data["feature_names"]
+        self.num_features = data.get("num_features", self.num_features)
+        self.cat_features = data.get("cat_features", self.cat_features)
+        self.binary_features = data.get("binary_features", self.binary_features)
+        self.target_col = data.get("target_col", self.target_col)

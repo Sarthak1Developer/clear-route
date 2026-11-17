@@ -1,0 +1,327 @@
+{
+  "prediction_id": "pred_eval_HYD_002_18h",
+  "model_id": "xgboost",
+  "model_name": "XGBoost Regressor",
+  "predicted_congestion": 29.0,
+  "base_value": 24.05,
+  "additive_check": {
+    "base_value": 24.05,
+    "sum_attributions": 4.95,
+    "reconstructed_prediction": 29.0,
+    "is_consistent": true
+  },
+  "category_impacts": {
+    "time_of_day": 14.54,
+    "weather_condition": 0.16,
+    "traffic_history": -7.76,
+    "events_and_holidays": 0.0,
+    "road_characteristics": -2.12,
+    "spatial_location": 0.14
+  },
+  "feature_contributions": [
+    {
+      "feature": "hour",
+      "display_name": "Hour of Day (Diurnal Cycle)",
+      "category": "time_of_day",
+      "feature_value": 18,
+      "attribution_value": 18.16,
+      "direction": "increases_congestion",
+      "percentage_contribution": 44.0
+    },
+    {
+      "feature": "lag_speed_1h",
+      "display_name": "Corridor Speed 1-Hour Prior (t-1)",
+      "category": "traffic_history",
+      "feature_value": 67.0,
+      "attribution_value": -8.47,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 20.5
+    },
+    {
+      "feature": "day_of_week",
+      "display_name": "Day of Week (Weekday vs Weekend)",
+      "category": "time_of_day",
+      "feature_value": 5,
+      "attribution_value": -6.41,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 15.5
+    },
+    {
+      "feature": "is_peak_hour",
+      "display_name": "Peak Commute Rush Window",
+      "category": "time_of_day",
+      "feature_value": 1,
+      "attribution_value": 3.78,
+      "direction": "increases_congestion",
+      "percentage_contribution": 9.2
+    },
+    {
+      "feature": "road_lanes",
+      "display_name": "Carriageway Lane Capacity",
+      "category": "road_characteristics",
+      "feature_value": 8,
+      "attribution_value": -1.78,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 4.3
+    },
+    {
+      "feature": "is_weekend",
+      "display_name": "Weekend Leisure Schedule",
+      "category": "time_of_day",
+      "feature_value": 1,
+      "attribution_value": -0.99,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 2.4
+    },
+    {
+      "feature": "rolling_speed_3h",
+      "display_name": "Rolling Mean Speed (Prior 3 Hours)",
+      "category": "traffic_history",
+      "feature_value": 57.9,
+      "attribution_value": 0.71,
+      "direction": "increases_congestion",
+      "percentage_contribution": 1.7
+    },
+    {
+      "feature": "accident_risk_score",
+      "display_name": "MoRTH Contextual Accident Hazard",
+      "category": "road_characteristics",
+      "feature_value": 0.45,
+      "attribution_value": -0.48,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 1.2
+    },
+    {
+      "feature": "temperature_2m_c",
+      "display_name": "Ambient Air Temperature (\u00b0C)",
+      "category": "weather_condition",
+      "feature_value": 32.7,
+      "attribution_value": 0.09,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.2
+    },
+    {
+      "feature": "length_m",
+      "display_name": "Physical Segment Length (m)",
+      "category": "road_characteristics",
+      "feature_value": 0.78,
+      "attribution_value": 0.09,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.2
+    },
+    {
+      "feature": "city_Hyderabad",
+      "display_name": "Hyderabad Cyberabad Region",
+      "category": "spatial_location",
+      "feature_value": 1.0,
+      "attribution_value": 0.08,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.2
+    },
+    {
+      "feature": "free_flow_speed_kmh",
+      "display_name": "Design Free-Flow Speed (km/h)",
+      "category": "road_characteristics",
+      "feature_value": 70.0,
+      "attribution_value": 0.06,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.2
+    },
+    {
+      "feature": "city_Kolkata",
+      "display_name": "Kolkata Metropolitan Core",
+      "category": "spatial_location",
+      "feature_value": 0.0,
+      "attribution_value": 0.06,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.1
+    },
+    {
+      "feature": "wind_speed_10m_kmh",
+      "display_name": "Surface Wind Velocity (km/h)",
+      "category": "weather_condition",
+      "feature_value": -1.34,
+      "attribution_value": 0.05,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.1
+    },
+    {
+      "feature": "relative_humidity_2m_pct",
+      "display_name": "Relative Atmospheric Humidity (%)",
+      "category": "weather_condition",
+      "feature_value": -0.8,
+      "attribution_value": 0.03,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.1
+    },
+    {
+      "feature": "precipitation_mm",
+      "display_name": "Precipitation Rate (mm/hr)",
+      "category": "weather_condition",
+      "feature_value": 0.0,
+      "attribution_value": -0.01,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "road_type_trunk",
+      "display_name": "High-Capacity Expressway / Trunk",
+      "category": "road_characteristics",
+      "feature_value": 1.0,
+      "attribution_value": -0.01,
+      "direction": "dampens_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "month",
+      "display_name": "Seasonal Month",
+      "category": "time_of_day",
+      "feature_value": -0.37,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "event_intensity",
+      "display_name": "Event Congestion Intensity Factor",
+      "category": "events_and_holidays",
+      "feature_value": -0.11,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "road_type_primary",
+      "display_name": "Primary Arterial Corridor",
+      "category": "road_characteristics",
+      "feature_value": 0.0,
+      "attribution_value": 0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "road_type_secondary",
+      "display_name": "Secondary Commercial Road",
+      "category": "road_characteristics",
+      "feature_value": 0.0,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "event_type_Festival",
+      "display_name": "Major Religious / Cultural Festival",
+      "category": "events_and_holidays",
+      "feature_value": 0.0,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "event_type_None",
+      "display_name": "Event Type None",
+      "category": "events_and_holidays",
+      "feature_value": 1.0,
+      "attribution_value": 0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "event_type_Public Holiday",
+      "display_name": "Event Type Public Holiday",
+      "category": "events_and_holidays",
+      "feature_value": 0.0,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "event_type_Sports",
+      "display_name": "Stadium Sporting Match",
+      "category": "events_and_holidays",
+      "feature_value": 0.0,
+      "attribution_value": 0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "city_Bengaluru",
+      "display_name": "Bengaluru Metropolitan Region",
+      "category": "spatial_location",
+      "feature_value": 0.0,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "city_Delhi",
+      "display_name": "Delhi NCT Capital Region",
+      "category": "spatial_location",
+      "feature_value": 0.0,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "city_Mumbai",
+      "display_name": "Mumbai MMR Corridor",
+      "category": "spatial_location",
+      "feature_value": 0.0,
+      "attribution_value": 0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "is_holiday",
+      "display_name": "Gazetted Public Holiday",
+      "category": "events_and_holidays",
+      "feature_value": 0.0,
+      "attribution_value": 0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "event_present",
+      "display_name": "Active Cultural / Stadium Event",
+      "category": "events_and_holidays",
+      "feature_value": 0,
+      "attribution_value": 0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    },
+    {
+      "feature": "is_raining",
+      "display_name": "Active Rainfall Indicator",
+      "category": "weather_condition",
+      "feature_value": 0.0,
+      "attribution_value": -0.0,
+      "direction": "increases_congestion",
+      "percentage_contribution": 0.0
+    }
+  ],
+  "feature_values": {
+    "city": "Hyderabad",
+    "location_id": "HYD_002",
+    "location_name": "Gachibowli",
+    "timestamp": "2019-06-08 18:00:00",
+    "hour": 18,
+    "day_of_week": 5,
+    "is_weekend": 1,
+    "is_peak_hour": 1,
+    "road_type": "trunk",
+    "road_lanes": 8,
+    "free_flow_speed_kmh": 70.0,
+    "temperature_2m_c": 32.7,
+    "precipitation_mm": 0.0,
+    "lag_speed_1h": 67.0,
+    "rolling_speed_3h": 57.9,
+    "event_present": 0,
+    "accident_risk_score": 0.45
+  },
+  "explanation_summary": "Congestion predicted at 29.0% (+4.9% relative to the baseline of 24.05%). Primary upward congestion drivers are Hour of Day (Diurnal Cycle) (+18.16%) and Peak Commute Rush Window (+3.78%). Congestion is mitigated by Corridor Speed 1-Hour Prior (t-1) (-8.47%) and Day of Week (Weekday vs Weekend) (-6.41%).",
+  "limitations_and_caveats": [
+    "Feature Multi-colinearity: High correlation exists between 'hour' and 'is_peak_hour', as well as between 'lag_speed_1h' and 'rolling_speed_3h'. TreeExplainer attributes credit across correlated splits based on empirical training tree traversal; individual feature attributions should be interpreted in conjunction with their domain categories.",
+    "Data Sparsity in Extreme Weather: Precipitation events exceeding 30 mm/hr and mega-assemblies exceeding 1 million attendees represent rare historical events (monsoon cloudbursts, Ganesh Visarjan, Durga Puja). Attributions in these regions exhibit wider confidence bounds than standard dry diurnal commutes.",
+    "Non-Causal Associative Attributions: SHAP explains model predictive mechanics within the trained empirical manifold. Attributions reflect statistical associations rather than direct counterfactual causal guarantees."
+  ]
+}

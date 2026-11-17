@@ -1,0 +1,382 @@
+{
+  "by_city": {
+    "historical_mean": {
+      "Bengaluru": {
+        "samples": 4950,
+        "mae": 2.667,
+        "rmse": 3.414,
+        "r2": 0.9725
+      },
+      "Delhi": {
+        "samples": 4950,
+        "mae": 2.794,
+        "rmse": 3.514,
+        "r2": 0.9706
+      },
+      "Hyderabad": {
+        "samples": 4950,
+        "mae": 2.688,
+        "rmse": 3.444,
+        "r2": 0.9721
+      },
+      "Kolkata": {
+        "samples": 4950,
+        "mae": 2.872,
+        "rmse": 3.665,
+        "r2": 0.9675
+      },
+      "Mumbai": {
+        "samples": 4950,
+        "mae": 2.352,
+        "rmse": 2.944,
+        "r2": 0.9782
+      }
+    },
+    "linear_regression": {
+      "Bengaluru": {
+        "samples": 4950,
+        "mae": 8.213,
+        "rmse": 10.376,
+        "r2": 0.7457
+      },
+      "Delhi": {
+        "samples": 4950,
+        "mae": 10.276,
+        "rmse": 13.307,
+        "r2": 0.5785
+      },
+      "Hyderabad": {
+        "samples": 4950,
+        "mae": 8.032,
+        "rmse": 10.349,
+        "r2": 0.7479
+      },
+      "Kolkata": {
+        "samples": 4950,
+        "mae": 8.54,
+        "rmse": 10.924,
+        "r2": 0.711
+      },
+      "Mumbai": {
+        "samples": 4950,
+        "mae": 8.168,
+        "rmse": 10.338,
+        "r2": 0.7309
+      }
+    },
+    "random_forest": {
+      "Bengaluru": {
+        "samples": 4950,
+        "mae": 4.628,
+        "rmse": 6.107,
+        "r2": 0.9119
+      },
+      "Delhi": {
+        "samples": 4950,
+        "mae": 5.013,
+        "rmse": 6.482,
+        "r2": 0.9
+      },
+      "Hyderabad": {
+        "samples": 4950,
+        "mae": 4.703,
+        "rmse": 6.214,
+        "r2": 0.9091
+      },
+      "Kolkata": {
+        "samples": 4950,
+        "mae": 4.812,
+        "rmse": 6.318,
+        "r2": 0.9034
+      },
+      "Mumbai": {
+        "samples": 4950,
+        "mae": 4.283,
+        "rmse": 5.613,
+        "r2": 0.9207
+      }
+    },
+    "xgboost": {
+      "Bengaluru": {
+        "samples": 4950,
+        "mae": 2.715,
+        "rmse": 3.451,
+        "r2": 0.9719
+      },
+      "Delhi": {
+        "samples": 4950,
+        "mae": 2.825,
+        "rmse": 3.563,
+        "r2": 0.9698
+      },
+      "Hyderabad": {
+        "samples": 4950,
+        "mae": 2.772,
+        "rmse": 3.555,
+        "r2": 0.9702
+      },
+      "Kolkata": {
+        "samples": 4950,
+        "mae": 2.913,
+        "rmse": 3.705,
+        "r2": 0.9668
+      },
+      "Mumbai": {
+        "samples": 4950,
+        "mae": 2.409,
+        "rmse": 3.006,
+        "r2": 0.9772
+      }
+    }
+  },
+  "by_traffic_condition": {
+    "historical_mean": {
+      "Peak Hours (08-11 & 17-21)": {
+        "samples": 9325,
+        "mae": 2.738,
+        "rmse": 3.493,
+        "r2": 0.9684
+      },
+      "Off-Peak Hours": {
+        "samples": 15425,
+        "mae": 2.636,
+        "rmse": 3.351,
+        "r2": 0.9254
+      },
+      "Weekdays (Mon-Fri)": {
+        "samples": 17550,
+        "mae": 2.669,
+        "rmse": 3.395,
+        "r2": 0.9758
+      },
+      "Weekends (Sat-Sun)": {
+        "samples": 7200,
+        "mae": 2.688,
+        "rmse": 3.429,
+        "r2": 0.953
+      },
+      "Rainy Weather (>0.5mm)": {
+        "samples": 195,
+        "mae": 2.778,
+        "rmse": 3.461,
+        "r2": 0.972
+      },
+      "Dry Weather (<=0.5mm)": {
+        "samples": 24555,
+        "mae": 2.674,
+        "rmse": 3.404,
+        "r2": 0.9722
+      },
+      "Low Congestion (0-25%)": {
+        "samples": 14414,
+        "mae": 2.582,
+        "rmse": 3.284,
+        "r2": 0.8031
+      },
+      "Moderate Congestion (26-50%)": {
+        "samples": 6822,
+        "mae": 2.791,
+        "rmse": 3.546,
+        "r2": 0.7675
+      },
+      "High Congestion (51-75%)": {
+        "samples": 3398,
+        "mae": 2.721,
+        "rmse": 3.469,
+        "r2": 0.7299
+      },
+      "Severe Congestion (>75%)": {
+        "samples": 116,
+        "mae": 5.991,
+        "rmse": 6.437,
+        "r2": -14.3017
+      }
+    },
+    "linear_regression": {
+      "Peak Hours (08-11 & 17-21)": {
+        "samples": 9325,
+        "mae": 12.476,
+        "rmse": 14.613,
+        "r2": 0.4475
+      },
+      "Off-Peak Hours": {
+        "samples": 15425,
+        "mae": 6.331,
+        "rmse": 8.321,
+        "r2": 0.5399
+      },
+      "Weekdays (Mon-Fri)": {
+        "samples": 17550,
+        "mae": 8.532,
+        "rmse": 10.981,
+        "r2": 0.7471
+      },
+      "Weekends (Sat-Sun)": {
+        "samples": 7200,
+        "mae": 8.924,
+        "rmse": 11.445,
+        "r2": 0.4761
+      },
+      "Rainy Weather (>0.5mm)": {
+        "samples": 195,
+        "mae": 9.289,
+        "rmse": 11.612,
+        "r2": 0.6849
+      },
+      "Dry Weather (<=0.5mm)": {
+        "samples": 24555,
+        "mae": 8.641,
+        "rmse": 11.114,
+        "r2": 0.704
+      },
+      "Low Congestion (0-25%)": {
+        "samples": 14414,
+        "mae": 7.084,
+        "rmse": 9.481,
+        "r2": -0.6408
+      },
+      "Moderate Congestion (26-50%)": {
+        "samples": 6822,
+        "mae": 9.815,
+        "rmse": 12.015,
+        "r2": -1.6697
+      },
+      "High Congestion (51-75%)": {
+        "samples": 3398,
+        "mae": 12.448,
+        "rmse": 14.504,
+        "r2": -3.7209
+      },
+      "Severe Congestion (>75%)": {
+        "samples": 116,
+        "mae": 22.661,
+        "rmse": 23.486,
+        "r2": -202.7144
+      }
+    },
+    "random_forest": {
+      "Peak Hours (08-11 & 17-21)": {
+        "samples": 9325,
+        "mae": 6.854,
+        "rmse": 8.29,
+        "r2": 0.8222
+      },
+      "Off-Peak Hours": {
+        "samples": 15425,
+        "mae": 3.378,
+        "rmse": 4.383,
+        "r2": 0.8723
+      },
+      "Weekdays (Mon-Fri)": {
+        "samples": 17550,
+        "mae": 4.527,
+        "rmse": 5.933,
+        "r2": 0.9262
+      },
+      "Weekends (Sat-Sun)": {
+        "samples": 7200,
+        "mae": 5.081,
+        "rmse": 6.661,
+        "r2": 0.8226
+      },
+      "Rainy Weather (>0.5mm)": {
+        "samples": 195,
+        "mae": 5.16,
+        "rmse": 6.68,
+        "r2": 0.8957
+      },
+      "Dry Weather (<=0.5mm)": {
+        "samples": 24555,
+        "mae": 4.684,
+        "rmse": 6.149,
+        "r2": 0.9094
+      },
+      "Low Congestion (0-25%)": {
+        "samples": 14414,
+        "mae": 4.018,
+        "rmse": 5.586,
+        "r2": 0.4304
+      },
+      "Moderate Congestion (26-50%)": {
+        "samples": 6822,
+        "mae": 4.618,
+        "rmse": 5.707,
+        "r2": 0.3978
+      },
+      "High Congestion (51-75%)": {
+        "samples": 3398,
+        "mae": 7.284,
+        "rmse": 8.314,
+        "r2": -0.5511
+      },
+      "Severe Congestion (>75%)": {
+        "samples": 116,
+        "mae": 15.964,
+        "rmse": 16.192,
+        "r2": -95.8311
+      }
+    },
+    "xgboost": {
+      "Peak Hours (08-11 & 17-21)": {
+        "samples": 9325,
+        "mae": 2.837,
+        "rmse": 3.612,
+        "r2": 0.9662
+      },
+      "Off-Peak Hours": {
+        "samples": 15425,
+        "mae": 2.66,
+        "rmse": 3.372,
+        "r2": 0.9244
+      },
+      "Weekdays (Mon-Fri)": {
+        "samples": 17550,
+        "mae": 2.69,
+        "rmse": 3.412,
+        "r2": 0.9756
+      },
+      "Weekends (Sat-Sun)": {
+        "samples": 7200,
+        "mae": 2.816,
+        "rmse": 3.589,
+        "r2": 0.9485
+      },
+      "Rainy Weather (>0.5mm)": {
+        "samples": 195,
+        "mae": 2.787,
+        "rmse": 3.528,
+        "r2": 0.9709
+      },
+      "Dry Weather (<=0.5mm)": {
+        "samples": 24555,
+        "mae": 2.726,
+        "rmse": 3.464,
+        "r2": 0.9712
+      },
+      "Low Congestion (0-25%)": {
+        "samples": 14414,
+        "mae": 2.61,
+        "rmse": 3.316,
+        "r2": 0.7993
+      },
+      "Moderate Congestion (26-50%)": {
+        "samples": 6822,
+        "mae": 2.859,
+        "rmse": 3.612,
+        "r2": 0.7587
+      },
+      "High Congestion (51-75%)": {
+        "samples": 3398,
+        "mae": 2.837,
+        "rmse": 3.613,
+        "r2": 0.7071
+      },
+      "Severe Congestion (>75%)": {
+        "samples": 116,
+        "mae": 6.312,
+        "rmse": 6.723,
+        "r2": -15.6942
+      }
+    }
+  }
+}

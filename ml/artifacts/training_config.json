@@ -1,0 +1,26 @@
+{
+  "training_timestamp": "2026-11-17T08:05:19.383915+00:00",
+  "random_seed": 42,
+  "environment": {
+    "python_version": "3.13.17 (tags/v3.13.17:64e080d, Oct 21 2026, 14:08:53) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy_version": "2.5.4",
+    "pandas_version": "3.0.6",
+    "scikit_learn_version": "1.9.1",
+    "xgboost_version": "3.4.1",
+    "shap_version": "0.54.1",
+    "joblib_version": "1.6.0",
+    "matplotlib_version": "3.11.2"
+  },
+  "dataset_split_chronology": {
+    "train_samples": 115499,
+    "train_period": "2019-04-01 00:00:00 to 2019-10-10 11:00:00",
+    "val_samples": 24751,
+    "val_period": "2019-10-10 11:00:00 to 2019-11-20 17:00:00",
+    "test_samples": 24750,
+    "test_period": "2019-11-20 18:00:00 to 2019-12-31 23:00:00",
+    "total_samples": 165000
+  },
+  "target_variable": "congestion_percentage",
+  "evaluation_partition": "Strictly Held-Out 15% Chronological Test Set"
+}

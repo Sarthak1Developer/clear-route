@@ -1,0 +1,275 @@
+{
+  "report_generated_at": "2026-11-17T07:54:32.086338+00:00",
+  "pipeline_health_status": "HEALTHY - PRODUCTION READY",
+  "layer_record_counts": {
+    "silver_cleaned": 165000,
+    "gold_master": 165000,
+    "gold_feature_count": 40
+  },
+  "temporal_coverage": {
+    "start_timestamp": "2019-04-01 00:00:00",
+    "end_timestamp": "2019-12-31 23:00:00",
+    "total_calendar_days": 275,
+    "hours_covered": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "total_hours_in_day": 24,
+    "days_of_week_covered": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "weekend_record_percentage": 28.36
+  },
+  "geographic_coverage": {
+    "total_cities": 5,
+    "cities_list": [
+      "Bengaluru",
+      "Delhi",
+      "Hyderabad",
+      "Kolkata",
+      "Mumbai"
+    ],
+    "total_corridors_monitored": 25,
+    "corridors_per_city": {
+      "Bengaluru": 25,
+      "Delhi": 25,
+      "Hyderabad": 25,
+      "Kolkata": 25,
+      "Mumbai": 25
+    },
+    "bounding_box_compliance_rate": "100.0%"
+  },
+  "data_quality_metrics": {
+    "total_records": 165000,
+    "total_null_values": 0,
+    "duplicate_records_count": 0,
+    "invalid_speed_readings": 0,
+    "invalid_congestion_percentages": 0,
+    "temperature_range_c": [
+      2.0,
+      44.1
+    ],
+    "max_hourly_precipitation_mm": 40.5
+  },
+  "target_variable_profile": {
+    "target_name": "congestion_percentage",
+    "unit": "Percentage (%)",
+    "descriptive_statistics": {
+      "mean": 24.05,
+      "std": 20.4,
+      "min": 0.0,
+      "p25": 6.0,
+      "median": 19.33,
+      "p75": 38.77,
+      "p90": 55.54,
+      "p99": 72.5,
+      "max": 82.6
+    },
+    "category_breakdown": {
+      "Low": 96256,
+      "Moderate": 45345,
+      "High": 22649,
+      "Severe": 750
+    }
+  },
+  "provenance_audit": {
+    "weather_source": "Open-Meteo Historical Weather API (ECMWF ERA5 Reanalysis)",
+    "weather_provenance_type": "genuine_external_api",
+    "infrastructure_source": "OpenStreetMap & Geofabrik Regional Extracts",
+    "infrastructure_provenance_type": "manually_curated_benchmark",
+    "events_source": "The Gazette of India & Municipal Police Advisories",
+    "events_provenance_type": "manually_curated_authentic",
+    "traffic_source": "ClearRoute Transport Calibrated Model",
+    "traffic_provenance_type": "calibrated_benchmark_demonstration"
+  },
+  "feature_null_breakdown": {
+    "city": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "location_id": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "location_name": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "latitude": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "longitude": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "timestamp": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "hour": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "day_of_week": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "month": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "is_weekend": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "is_peak_hour": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "road_type": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "road_lanes": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "length_m": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "road_length": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "accident_risk_score": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "accident_risk": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "free_flow_speed_kmh": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "free_flow_speed": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "observed_speed_kmh": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "traffic_speed": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "congestion_index": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "congestion_percentage": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "congestion_category": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "temperature_2m_c": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "temperature": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "precipitation_mm": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "precipitation": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "is_raining": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "relative_humidity_2m_pct": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "humidity": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "wind_speed_10m_kmh": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "wind_speed": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "is_holiday": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "event_present": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "event_name": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "event_type": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "event_intensity": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "lag_speed_1h": {
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "rolling_speed_3h": {
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}
