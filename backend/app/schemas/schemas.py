@@ -198,8 +198,8 @@ class PredictionResponse(BaseModel):
     model_name: str
     model_version: str = "1.0.0"
     selected_model: str
-    historical_baseline_pct: float
-    difference_pct: float
+    historical_baseline_pct: Optional[float] = None
+    difference_pct: Optional[float] = None
     confidence_interval: Optional[ConfidenceInterval] = None
     input_features: Optional[Dict[str, Any]] = None
     base_value: Optional[float] = None
