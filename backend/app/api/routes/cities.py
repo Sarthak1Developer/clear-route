@@ -1,22 +1,30 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from backend.app.database.session import get_db
 from backend.app.repositories.data_repository import DataRepository
 from backend.app.services.analytics_service import AnalyticsService
-from backend.app.schemas.schemas import CityItem, CitySummaryResponse, CityLocationsResponse, LocationItem
+from backend.app.models.entities import TrafficRecord, Location
+from backend.app.schemas.schemas import CityItem, CitySummaryResponse, CityLocationsResponse
 
 router = APIRouter(tags=["Cities"])
 
-@router.get("/cities", response_model=List[CityItem])
+@router.get("/cities", response_model=List[CityItem], summary="Get all monitored metropolitan cities with real aggregate metrics")
 def get_all_cities(db: Session = Depends(get_db)):
+    """Retrieves all monitored metropolitan cities with actual database-calculated congestion averages."""
     repo = DataRepository(db)
     cities = repo.get_all_cities()
     
     result = []
     for c in cities:
         locs = repo.get_locations_by_city_id(c.id)
-        avg_c = 54.0 if c.city_code == "BLR" else 49.0 if c.city_code == "BOM" else 46.5 if c.city_code == "DEL" else 43.0 if c.city_code == "HYD" else 41.5
+        # Compute actual average congestion for this city from traffic records
+        avg_c = db.query(func.avg(TrafficRecord.congestion_percentage))\
+            .join(Location, Location.id == TrafficRecord.location_id)\
+            .filter(Location.city_id == c.id)\
+            .scalar()
+        
         result.append({
             "code": c.city_code,
             "name": c.city_name,
@@ -25,42 +33,26 @@ def get_all_cities(db: Session = Depends(get_db)):
             "lng": c.longitude,
             "zoom": c.zoom_level,
             "corridor_count": len(locs),
-            "avg_congestion_pct": avg_c,
+            "avg_congestion_pct": round(float(avg_c), 1) if avg_c is not None else 0.0,
         })
     return result
 
-@router.get("/cities/{city}/summary", response_model=CitySummaryResponse)
+@router.get("/cities/{city}/summary", response_model=CitySummaryResponse, summary="Get comprehensive analytics for a metropolitan city")
 def get_city_summary(city: str, db: Session = Depends(get_db)):
+    """Retrieves city analytical summary including peak hours, rain impact delta, and top congested corridors."""
     service = AnalyticsService(db)
     try:
         return service.get_city_summary(city)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.get("/cities/{city}/locations", response_model=CityLocationsResponse)
+@router.get("/cities/{city}/locations", response_model=CityLocationsResponse, summary="Get road corridors and traffic sensors for a city")
 def get_city_locations(city: str, db: Session = Depends(get_db)):
+    """Retrieves monitored road corridors and arterial segments for a city with genuine observed speeds."""
     repo = DataRepository(db)
     c = repo.get_city_by_name(city)
     if not c:
         raise HTTPException(status_code=404, detail=f"City '{city}' not found.")
 
-    locations = repo.get_locations_by_city_id(c.id)
-    items = []
-    for loc in locations:
-        c_val = round(min(88.0, 38.0 + loc.accident_risk_score * 30 + (8 if loc.road_type == "trunk" else 0)), 1)
-        items.append({
-            "id": loc.id,
-            "location_code": loc.location_code,
-            "location_name": loc.location_name,
-            "corridor_name": loc.corridor_name,
-            "latitude": loc.latitude,
-            "longitude": loc.longitude,
-            "road_type": loc.road_type,
-            "road_lanes": loc.road_lanes,
-            "speed_limit_kmh": loc.speed_limit_kmh,
-            "free_flow_speed_kmh": loc.free_flow_speed_kmh,
-            "observed_speed_kmh": round(loc.free_flow_speed_kmh * (1 - c_val / 100), 1),
-            "accident_risk_score": loc.accident_risk_score,
-            "avg_congestion_pct": c_val,
-        })
-    return {"city": c.city_name, "locations": items}
+    corridors = repo.get_city_corridors_with_stats(c.id)
+    return {"city": c.city_name, "locations": corridors}

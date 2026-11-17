@@ -10,17 +10,22 @@ from backend.app.models.entities import Prediction
 
 router = APIRouter(tags=["Predictions"])
 
-@router.post("/predict", response_model=PredictionResponse)
+@router.post("/predict", response_model=PredictionResponse, summary="Execute forward-looking congestion inference using serialized ML models")
 def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
+    """
+    Simulates congestion scenarios using serialized scikit-learn and XGBoost estimators.
+    Generates genuine local SHAP TreeExplainer attributions and empirical confidence intervals.
+    """
     repo = DataRepository(db)
     loc = repo.get_location_by_code_or_id(req.location_id)
     if not loc:
         raise HTTPException(status_code=404, detail=f"Location corridor '{req.location_id}' not found.")
 
-    # Parse hour and day of week
+    # Parse hour, month, day of week
     try:
         dt = datetime.datetime.strptime(req.prediction_date, "%Y-%m-%d")
         day_of_week = dt.weekday()
+        month = dt.month
         hour = int(req.prediction_time.split(":")[0])
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid date or time format: {e}")
@@ -28,27 +33,29 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
     # Validate model selection
     valid_models = ["historical_mean", "linear_regression", "random_forest", "xgboost"]
     if req.model_type not in valid_models:
-        raise HTTPException(status_code=400, detail=f"Invalid model_type. Choose from {valid_models}")
+        raise HTTPException(status_code=400, detail=f"Invalid model_type '{req.model_type}'. Choose from {valid_models}")
 
-    # Run inference service
+    # Run genuine ML inference service
     pred_result = inference_service.predict(
         city=req.city,
         location_code=loc.location_code,
         hour=hour,
         day_of_week=day_of_week,
+        month=month,
         model_type=req.model_type,
         temperature_c=req.temperature_c,
         precipitation_mm=req.precipitation_mm,
         humidity_pct=req.humidity_pct,
         wind_speed_kmh=req.wind_speed_kmh,
         event_present=req.event_present,
+        event_name=req.event_name or "",
         road_lanes=loc.road_lanes,
         road_type=loc.road_type,
         free_flow_speed=loc.free_flow_speed_kmh,
         accident_risk_score=loc.accident_risk_score,
     )
 
-    # Persist prediction record in PostgreSQL / SQLite
+    # Persist prediction record in SQLite / PostgreSQL
     try:
         repo.save_prediction({
             "location_id": loc.id,
@@ -65,7 +72,6 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
             "shap_attribution_json": json.dumps(pred_result["shap_attributions"]),
         })
     except Exception as e:
-        # Log error but don't fail user request
         print(f"Warning: could not persist prediction record: {e}")
 
     return {
@@ -83,8 +89,9 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
         "shap_attributions": pred_result["shap_attributions"],
     }
 
-@router.get("/predictions/{prediction_id}")
+@router.get("/predictions/{prediction_id}", summary="Retrieve stored prediction record by ID")
 def get_prediction_by_id(prediction_id: str, db: Session = Depends(get_db)):
+    """Retrieves a previously computed and persisted prediction by its record ID."""
     pred = db.query(Prediction).filter(Prediction.id == int(prediction_id) if prediction_id.isdigit() else False).first()
     if not pred:
         raise HTTPException(status_code=404, detail="Prediction not found")
@@ -98,8 +105,9 @@ def get_prediction_by_id(prediction_id: str, db: Session = Depends(get_db)):
         "category": pred.congestion_category,
     }
 
-@router.get("/models")
+@router.get("/models", summary="List available machine learning model architectures")
 def get_available_models():
+    """Lists the 4 available model approaches and algorithm families supported by the platform."""
     return {
         "models": [
             {

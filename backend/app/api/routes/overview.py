@@ -6,7 +6,11 @@ from backend.app.schemas.schemas import OverviewResponse
 
 router = APIRouter(tags=["Overview"])
 
-@router.get("/overview", response_model=OverviewResponse)
+@router.get("/overview", response_model=OverviewResponse, summary="Get comprehensive multi-city traffic analytical overview")
 def get_overview(db: Session = Depends(get_db)):
+    """
+    Returns platform-wide KPI metrics, city comparison rankings, 24-hour diurnal patterns,
+    weekly commuter volume trends, and weather correlation bands computed directly from database records.
+    """
     service = AnalyticsService(db)
     return service.get_overview()

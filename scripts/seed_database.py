@@ -1,13 +1,16 @@
 import sys
 import os
 import datetime
+import pandas as pd
 
 # Ensure project root is in sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, PROJECT_ROOT)
 
 from backend.app.database.session import engine, Base, SessionLocal
 from backend.app.models.entities import (
-    City, Location, Event, ModelMetadata, DataSource
+    City, Location, Event, ModelMetadata, DataSource,
+    TrafficRecord, WeatherRecord
 )
 
 def seed():
@@ -85,8 +88,8 @@ def seed():
 
         # Seed Verified Events (2019 and 2026 isolated)
         existing_events = db.query(Event).count()
-        if existing_events >= 10:
-            print("Events already seeded. Skipping event seeding.")
+        if existing_events >= 25:
+            print(f"Events already seeded ({existing_events} records). Skipping event seeding.")
         else:
             print("Seeding 2019 Historical Events & 2026 Future Scenarios...")
             events_data = [
@@ -106,6 +109,34 @@ def seed():
             ]
             db.add_all(events_data)
             db.commit()
+
+            # Also sync verified events from bronze CSVs if present
+            csv_2019 = os.path.join(PROJECT_ROOT, "data", "bronze", "events", "raw_events_2019_historical.csv")
+            if os.path.exists(csv_2019):
+                df_ev = pd.read_csv(csv_2019)
+                city_map = {c.city_name.lower(): c.id for c in db.query(City).all()}
+                existing_set = {(e.city_id, e.event_name.lower(), str(e.event_date)) for e in db.query(Event).all()}
+                extra_objs = []
+                for _, row in df_ev.iterrows():
+                    c_id = city_map.get(str(row["city"]).strip().lower())
+                    ev_name = str(row["event_name"]).strip()
+                    ev_date = str(row["date"]).strip()
+                    if c_id and (c_id, ev_name.lower(), ev_date) not in existing_set:
+                        dt = datetime.datetime.strptime(ev_date, "%Y-%m-%d").date()
+                        source = "Gazette of India & Municipal Advisory" if row["event_type"] == "Public Holiday" else f"{row['city']} Police Traffic Advisory 2019"
+                        extra_objs.append(Event(
+                            city_id=c_id,
+                            event_name=ev_name,
+                            event_type=row["event_type"],
+                            event_date=dt,
+                            venue=row.get("venue"),
+                            expected_attendance=int(row.get("attendance", 0)),
+                            is_2026_future=False,
+                            source_attribution=source
+                        ))
+                if extra_objs:
+                    db.add_all(extra_objs)
+                    db.commit()
 
         # Seed Model Metadata
         existing_models = db.query(ModelMetadata).count()
@@ -137,6 +168,81 @@ def seed():
             ]
             db.add_all(sources_data)
             db.commit()
+
+        # Seed Weather Records from raw_weather_era5_hourly.csv
+        existing_weather = db.query(WeatherRecord).count()
+        if existing_weather > 0:
+            print(f"Weather records already seeded ({existing_weather} rows).")
+        else:
+            weather_csv = os.path.join(PROJECT_ROOT, "data", "bronze", "weather_era5", "raw_weather_era5_hourly.csv")
+            if os.path.exists(weather_csv):
+                print(f"Seeding Weather Records from {weather_csv}...")
+                df_w = pd.read_csv(weather_csv)
+                city_map = {c.city_name.lower(): c.id for c in db.query(City).all()}
+                weather_objs = []
+                for _, row in df_w.iterrows():
+                    c_id = city_map.get(str(row["city"]).strip().lower())
+                    if not c_id:
+                        continue
+                    ts_str = str(row["timestamp"])
+                    try:
+                        ts = datetime.datetime.fromisoformat(ts_str)
+                    except Exception:
+                        ts = datetime.datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                    
+                    weather_objs.append(WeatherRecord(
+                        city_id=c_id,
+                        timestamp=ts,
+                        temperature_c=float(row["temperature_2m_c"]),
+                        precipitation_mm=float(row["precipitation_mm"]),
+                        humidity_pct=float(row["relative_humidity_2m_pct"]),
+                        wind_speed_kmh=float(row["wind_speed_10m_kmh"]),
+                        weather_condition="Rain" if float(row["precipitation_mm"]) > 0.5 else "Clear / Overcast"
+                    ))
+                db.bulk_save_objects(weather_objs)
+                db.commit()
+                print(f"Successfully seeded {len(weather_objs)} weather records.")
+
+        # Seed Traffic Records from gold_master_congestion.csv
+        existing_traffic = db.query(TrafficRecord).count()
+        if existing_traffic > 0:
+            print(f"Traffic records already seeded ({existing_traffic} rows).")
+        else:
+            traffic_csv = os.path.join(PROJECT_ROOT, "data", "gold", "master_congestion", "gold_master_congestion.csv")
+            if os.path.exists(traffic_csv):
+                print(f"Seeding Traffic Records from {traffic_csv}...")
+                df_t = pd.read_csv(traffic_csv)
+                loc_map = {l.location_code: l.id for l in db.query(Location).all()}
+                traffic_objs = []
+                for _, row in df_t.iterrows():
+                    l_id = loc_map.get(str(row["location_id"]).strip())
+                    if not l_id:
+                        continue
+                    ts_str = str(row["timestamp"])
+                    try:
+                        ts = datetime.datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        ts = datetime.datetime.fromisoformat(ts_str)
+
+                    traffic_objs.append(TrafficRecord(
+                        location_id=l_id,
+                        timestamp=ts,
+                        hour=int(row["hour"]),
+                        day_of_week=int(row["day_of_week"]),
+                        month=int(row["month"]),
+                        is_weekend=bool(row["is_weekend"]),
+                        is_peak_hour=bool(row["is_peak_hour"]),
+                        observed_speed_kmh=float(row["observed_speed_kmh"]),
+                        free_flow_speed_kmh=float(row["free_flow_speed_kmh"]),
+                        congestion_percentage=float(row["congestion_percentage"]),
+                        congestion_category=str(row["congestion_category"]),
+                    ))
+
+                chunk_size = 1000
+                for i in range(0, len(traffic_objs), chunk_size):
+                    db.bulk_save_objects(traffic_objs[i:i + chunk_size])
+                    db.commit()
+                print(f"Successfully seeded {len(traffic_objs)} traffic records.")
 
         print("Database seeding completed successfully.")
 

@@ -46,7 +46,7 @@ class Location(Base):
 class TrafficRecord(Base):
     __tablename__ = "traffic_records"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     location_id = Column(Integer, ForeignKey("locations.id", ondelete="CASCADE"), nullable=False, index=True)
     timestamp = Column(DateTime, nullable=False, index=True)
     hour = Column(Integer, nullable=False, index=True)
@@ -64,7 +64,7 @@ class TrafficRecord(Base):
 class WeatherRecord(Base):
     __tablename__ = "weather_records"
 
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     city_id = Column(Integer, ForeignKey("cities.id", ondelete="CASCADE"), nullable=False, index=True)
     timestamp = Column(DateTime, nullable=False, index=True)
     temperature_c = Column(Float, nullable=False)

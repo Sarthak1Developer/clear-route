@@ -1,7 +1,7 @@
 import datetime
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from backend.app.repositories.data_repository import DataRepository
 from backend.app.models.entities import City, Location, TrafficRecord, WeatherRecord, Event
 
@@ -11,87 +11,88 @@ class AnalyticsService:
         self.db = db
 
     def get_overview(self) -> Dict[str, Any]:
+        """Calculates multi-city traffic analytical overview directly from database records."""
         cities = self.repo.get_all_cities()
         total_cities = len(cities)
-        
-        # Calculate city comparison
+
+        # City-wise comparison using actual traffic averages
         city_comparison = []
-        total_locations = 0
-        sum_congestion = 0.0
+        city_stats = self.db.query(
+            City.id,
+            City.city_name,
+            func.avg(TrafficRecord.congestion_percentage).label("avg_congestion"),
+            func.count(func.distinct(TrafficRecord.location_id)).label("corridor_count")
+        ).join(Location, Location.city_id == City.id)\
+         .join(TrafficRecord, TrafficRecord.location_id == Location.id)\
+         .group_by(City.id, City.city_name)\
+         .all()
+
+        stats_map = {row.id: (round(float(row.avg_congestion), 1), int(row.corridor_count)) for row in city_stats if row.avg_congestion is not None}
+
+        total_corridors = 0
+        sum_c = 0.0
+        congested_city = "Bengaluru"
+        max_c = -1.0
 
         for c in cities:
-            locs = self.repo.get_locations_by_city_id(c.id)
-            total_locations += len(locs)
-            
-            # Compute average congestion for city based on its corridors
-            if locs:
-                city_avg = sum(
-                    l.accident_risk_score * 20 + (50 if c.city_code == "BLR" else 45 if c.city_code == "BOM" else 44 if c.city_code == "DEL" else 42 if c.city_code == "HYD" else 40)
-                    for l in locs
-                ) / len(locs)
+            if c.id in stats_map:
+                avg_val, c_count = stats_map[c.id]
             else:
-                city_avg = 45.0
+                locs = self.repo.get_locations_by_city_id(c.id)
+                c_count = len(locs)
+                avg_val = 0.0
             
-            city_avg = round(min(85.0, max(20.0, city_avg)), 1)
-            sum_congestion += city_avg
+            total_corridors += c_count
+            sum_c += avg_val
+            if avg_val > max_c:
+                max_c = avg_val
+                congested_city = c.city_name
+
             city_comparison.append({
                 "city": c.city_name,
-                "avg_congestion_pct": city_avg,
-                "corridor_count": len(locs),
+                "avg_congestion_pct": avg_val,
+                "corridor_count": c_count,
             })
 
-        avg_congestion_pct = round(sum_congestion / total_cities, 1) if total_cities > 0 else 46.2
-        most_congested = max(city_comparison, key=lambda x: x["avg_congestion_pct"])["city"] if city_comparison else "Bengaluru"
+        # Overall network stats
+        total_traffic = self.db.query(func.count(TrafficRecord.id)).scalar() or 0
+        overall_avg = self.db.query(func.avg(TrafficRecord.congestion_percentage)).scalar()
+        avg_congestion_pct = round(float(overall_avg), 1) if overall_avg is not None else 0.0
 
-        # Diurnal Hourly Congestion Distribution (00:00 - 23:00)
-        # Based on typical urban commuting peaks in Indian metros (AM peak: 8-11, PM peak: 17-21)
-        hourly_trend = []
-        for h in range(24):
-            if 8 <= h <= 11:
-                base = 65.0 + (h - 8) * 3.5
-                is_peak = True
-            elif 17 <= h <= 21:
-                base = 72.0 - (h - 17) * 2.5
-                is_peak = True
-            elif 1 <= h <= 5:
-                base = 18.0 + h * 1.5
-                is_peak = False
-            else:
-                base = 42.0 + (h % 3) * 2.0
-                is_peak = False
-            
-            hourly_trend.append({
-                "hour": h,
-                "avg_congestion": round(base, 1),
-                "is_peak": is_peak,
-            })
+        min_ts = self.db.query(func.min(TrafficRecord.timestamp)).scalar()
+        max_ts = self.db.query(func.max(TrafficRecord.timestamp)).scalar()
+        if min_ts and max_ts:
+            coverage_str = f"{min_ts.strftime('%B %d, %Y')} – {max_ts.strftime('%B %d, %Y')}"
+        else:
+            coverage_str = "April 1, 2019 – December 31, 2019"
 
-        # Day of Week Trend (Monday - Sunday)
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        day_values = [52.4, 54.1, 53.8, 55.2, 58.7, 42.3, 33.5]
-        weekly_trend = [{"day": d, "avg_congestion": v} for d, v in zip(days, day_values)]
+        # Diurnal 24-hr distribution from database
+        hourly_trend = self.repo.get_hourly_trend_data()
 
-        # Monthly Trend (April - December 2019)
-        months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        # Shows peak in monsoon months (Jul, Aug) and Diwali festival month (Oct/Nov)
-        month_values = [42.1, 41.5, 45.8, 54.3, 56.1, 49.8, 53.4, 48.2, 44.9]
-        monthly_trend = [{"month": m, "avg_congestion": v} for m, v in zip(months, month_values)]
+        # Day of week from database
+        weekly_trend = self.repo.get_weekly_trend_data()
 
-        # Weather correlation
+        # Monthly from database
+        monthly_trend = self.repo.get_monthly_trend_data()
+
+        # Weather correlation from database
+        weather_metrics = self.repo.get_weather_impact_data()
         weather_correlation = [
-            {"band": "Dry (<0.5mm)", "avg_congestion": 38.4, "sample_count": 4200},
-            {"band": "Light Rain (0.5-5mm)", "avg_congestion": 49.2, "sample_count": 1850},
-            {"band": "Moderate (5-15mm)", "avg_congestion": 62.7, "sample_count": 920},
-            {"band": "Heavy Monsoon (>15mm)", "avg_congestion": 78.5, "sample_count": 340},
+            {
+                "band": b["band"],
+                "avg_congestion": b["avg_congestion"],
+                "sample_count": b["sample_count"],
+            }
+            for b in weather_metrics["rain_bands"]
         ]
 
         return {
-            "total_cities": total_cities or 5,
-            "total_locations": total_locations or 25,
+            "total_cities": total_cities,
+            "total_locations": total_corridors,
             "avg_congestion_pct": avg_congestion_pct,
-            "most_congested_city": most_congested,
-            "total_records_processed": 184500,
-            "historical_coverage": "April 1, 2019 – December 31, 2019",
+            "most_congested_city": congested_city,
+            "total_records_processed": total_traffic,
+            "historical_coverage": coverage_str,
             "city_comparison": city_comparison,
             "hourly_trend": hourly_trend,
             "weekly_trend": weekly_trend,
@@ -100,174 +101,204 @@ class AnalyticsService:
         }
 
     def get_city_summary(self, city_name: str) -> Dict[str, Any]:
+        """Calculates genuine city profile and corridor rankings from database records."""
         city = self.repo.get_city_by_name(city_name)
         if not city:
             raise ValueError(f"City '{city_name}' is not in the supported metropolitan scope.")
 
-        locations = self.repo.get_locations_by_city_id(city.id)
-        
-        # Calculate city specific base metrics
-        city_multiplier = 1.1 if city.city_code == "BLR" else 1.05 if city.city_code == "BOM" else 1.0
-        avg_congestion = round(45.0 * city_multiplier, 1)
+        # City average congestion from real records
+        avg_c_val = self.db.query(func.avg(TrafficRecord.congestion_percentage))\
+            .join(Location, Location.id == TrafficRecord.location_id)\
+            .filter(Location.city_id == city.id)\
+            .scalar()
+        avg_congestion = round(float(avg_c_val), 1) if avg_c_val is not None else 0.0
 
-        # Diurnal weekday vs weekend curves
-        hourly_dist = []
-        for h in range(24):
-            if 8 <= h <= 11:
-                wd = round((64.0 + (h - 8) * 4.0) * city_multiplier, 1)
-                we = round(35.0 + h * 1.5, 1)
-            elif 17 <= h <= 21:
-                wd = round((74.0 - (h - 17) * 2.5) * city_multiplier, 1)
-                we = round(48.0 + (21 - h) * 1.2, 1)
-            elif 1 <= h <= 5:
-                wd = round(16.0 + h * 1.2, 1)
-                we = round(14.0 + h * 1.0, 1)
-            else:
-                wd = round((44.0 + (h % 3) * 2.0) * city_multiplier, 1)
-                we = round(38.0 + (h % 4) * 2.0, 1)
+        # Peak hours analysis from actual hourly averages
+        hourly_rows = self.db.query(
+            TrafficRecord.hour,
+            func.avg(TrafficRecord.congestion_percentage).label("avg_c")
+        ).join(Location, Location.id == TrafficRecord.location_id)\
+         .filter(Location.city_id == city.id)\
+         .group_by(TrafficRecord.hour)\
+         .order_by(desc("avg_c"))\
+         .all()
 
-            hourly_dist.append({
-                "hour": h,
-                "weekday_congestion": min(98.0, wd),
-                "weekend_congestion": min(90.0, we),
-            })
+        if hourly_rows:
+            peak_row = hourly_rows[0]
+            peak_h = peak_row[0]
+            peak_c = round(float(peak_row[1]), 1)
+            peak_hours_str = f"{peak_h:02d}:00 – {(peak_h + 2) % 24:02d}:00 IST"
+        else:
+            peak_hours_str = "18:00 – 20:00 IST"
+            peak_c = avg_congestion
 
-        # Top congested corridors
-        top_corridors = []
-        for loc in locations:
-            c_val = round(min(88.0, 38.0 + loc.accident_risk_score * 30 + (10 if loc.road_type == "trunk" else 0)), 1)
-            top_corridors.append({
-                "id": loc.id,
-                "location_code": loc.location_code,
-                "location_name": loc.location_name,
-                "corridor_name": loc.corridor_name,
-                "latitude": loc.latitude,
-                "longitude": loc.longitude,
-                "road_type": loc.road_type,
-                "road_lanes": loc.road_lanes,
-                "speed_limit_kmh": loc.speed_limit_kmh,
-                "free_flow_speed_kmh": loc.free_flow_speed_kmh,
-                "observed_speed_kmh": round(loc.free_flow_speed_kmh * (1 - c_val / 100), 1),
-                "accident_risk_score": loc.accident_risk_score,
-                "avg_congestion_pct": c_val,
-            })
-        top_corridors.sort(key=lambda x: x["avg_congestion_pct"], reverse=True)
+        # Rain impact in this city
+        city_weather = self.repo.get_weather_impact_data(city_id=city.id)
+        rain_delta = city_weather.get("heavy_rain_surge", 0.0)
+
+        # 24-hr Weekday vs Weekend distribution
+        hourly_dist = self.repo.get_hourly_weekday_weekend_distribution(city_id=city.id)
+
+        # Top congested corridors ranked by actual database average
+        corridors = self.repo.get_city_corridors_with_stats(city.id)
+        corridors.sort(key=lambda x: x["avg_congestion_pct"], reverse=True)
+
+        # Category
+        if avg_congestion <= 25.0:
+            category = "Low"
+        elif avg_congestion <= 50.0:
+            category = "Moderate"
+        elif avg_congestion <= 75.0:
+            category = "High"
+        else:
+            category = "Severe"
 
         return {
             "city": city.city_name,
             "state": city.state,
             "avg_congestion_pct": avg_congestion,
-            "congestion_category": "High" if avg_congestion > 50 else "Moderate",
-            "peak_hours_str": "18:00 – 20:30 IST",
-            "peak_hour_congestion_pct": round(avg_congestion * 1.45, 1),
-            "rain_impact_delta": round(18.5 * city_multiplier, 1),
+            "congestion_category": category,
+            "peak_hours_str": peak_hours_str,
+            "peak_hour_congestion_pct": peak_c,
+            "rain_impact_delta": rain_delta,
             "hourly_distribution": hourly_dist,
-            "top_congested_corridors": top_corridors,
+            "top_congested_corridors": corridors,
         }
 
     def get_location_trends(self, loc_code: str) -> Dict[str, Any]:
+        """Computes diurnal, weekly and monthly trends for a specific road corridor."""
         loc = self.repo.get_location_by_code_or_id(loc_code)
         if not loc:
             raise ValueError(f"Corridor '{loc_code}' not found.")
 
-        # Corridor specific baseline
-        corridor_base = 40.0 + loc.accident_risk_score * 25.0
+        stats = self.repo.get_corridor_stats(loc.id)
+        corridor_avg = stats["avg_congestion_pct"] if stats["avg_congestion_pct"] is not None else 0.0
+
+        # Hourly trend for this corridor
+        hourly_rows = self.db.query(
+            TrafficRecord.hour,
+            func.avg(TrafficRecord.congestion_percentage).label("avg_c"),
+            func.avg(TrafficRecord.observed_speed_kmh).label("avg_s")
+        ).filter(TrafficRecord.location_id == loc.id)\
+         .group_by(TrafficRecord.hour)\
+         .order_by(TrafficRecord.hour)\
+         .all()
+
+        h_c_map = {r[0]: round(float(r[1]), 1) for r in hourly_rows if r[1] is not None}
+        h_s_map = {r[0]: round(float(r[2]), 1) for r in hourly_rows if r[2] is not None}
 
         hourly = []
         for h in range(24):
-            if 8 <= h <= 11:
-                val = corridor_base + 22.0 + (h - 8) * 3.0
-            elif 17 <= h <= 21:
-                val = corridor_base + 28.0 - (h - 17) * 2.0
-            elif 1 <= h <= 5:
-                val = max(10.0, corridor_base - 25.0 + h * 2.0)
-            else:
-                val = corridor_base + (h % 3) * 2.5
-
-            val = round(min(98.0, max(5.0, val)), 1)
-            spd = round(loc.free_flow_speed_kmh * (1.0 - val / 100.0), 1)
+            c_val = h_c_map.get(h, None)
+            s_val = h_s_map.get(h, None)
             hourly.append({
                 "hour": h,
-                "congestion_pct": val,
-                "speed_kmh": max(5.0, spd),
+                "congestion_pct": c_val if c_val is not None else 0.0,
+                "speed_kmh": s_val if s_val is not None else loc.free_flow_speed_kmh,
             })
 
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        day_deltas = [4.5, 5.8, 5.2, 6.1, 9.4, -8.2, -16.5]
-        weekly = [
-            {"day": d, "congestion_pct": round(min(95.0, max(15.0, corridor_base + delta)), 1)}
-            for d, delta in zip(days, day_deltas)
-        ]
+        # Peak hour identification
+        observed_hours = [r for r in hourly if r["congestion_pct"] > 0]
+        if observed_hours:
+            peak_item = max(observed_hours, key=lambda x: x["congestion_pct"])
+            peak_hour = peak_item["hour"]
+            peak_congestion = peak_item["congestion_pct"]
+        else:
+            peak_hour = 18
+            peak_congestion = corridor_avg
 
-        months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        month_deltas = [-4.0, -5.5, 2.0, 12.5, 14.2, 6.8, 11.0, 4.5, 1.2]
-        monthly = [
-            {"month": m, "congestion_pct": round(min(95.0, max(15.0, corridor_base + delta)), 1)}
-            for m, delta in zip(months, month_deltas)
-        ]
+        # Weekday vs weekend delta from DB
+        wd_avg = self.db.query(func.avg(TrafficRecord.congestion_percentage)).filter(
+            TrafficRecord.location_id == loc.id,
+            TrafficRecord.is_weekend == False
+        ).scalar()
+        we_avg = self.db.query(func.avg(TrafficRecord.congestion_percentage)).filter(
+            TrafficRecord.location_id == loc.id,
+            TrafficRecord.is_weekend == True
+        ).scalar()
 
-        peak_h = max(hourly, key=lambda x: x["congestion_pct"])
+        if wd_avg is not None and we_avg is not None:
+            weekend_delta = round(float(we_avg) - float(wd_avg), 1)
+        else:
+            weekend_delta = 0.0
+
+        # Weekly trend (Mon-Sun)
+        weekly = self.repo.get_weekly_trend_data(location_id=loc.id)
+
+        # Monthly trend
+        monthly = self.repo.get_monthly_trend_data(location_id=loc.id)
+
+        # Rain delta
+        rain_stats = self.repo.get_weather_impact_data(city_id=loc.city_id)
+        rain_delta = rain_stats.get("heavy_rain_surge", 0.0)
 
         return {
             "location_code": loc.location_code,
             "location_name": loc.location_name,
             "corridor_name": loc.corridor_name,
-            "avg_congestion": round(corridor_base, 1),
-            "peak_hour": peak_h["hour"],
-            "peak_hour_congestion": peak_h["congestion_pct"],
-            "weekend_delta": -14.2,
-            "rain_delta": 21.5,
+            "avg_congestion": corridor_avg,
+            "peak_hour": peak_hour,
+            "peak_hour_congestion": peak_congestion,
+            "weekend_delta": weekend_delta,
+            "rain_delta": rain_delta,
             "hourly": hourly,
             "weekly": weekly,
             "monthly": monthly,
         }
 
-    def get_event_impact(self) -> Dict[str, Any]:
-        hourly_comp = []
-        for h in range(24):
-            if 8 <= h <= 11:
-                normal = 68.0
-                event = 52.0 # Commuters stay home or offices closed
-            elif 17 <= h <= 21:
-                normal = 72.0
-                event = 88.5 # High spectator / attendee traffic
-            elif 1 <= h <= 5:
-                normal = 16.0
-                event = 28.0 # Late night post-event disperse
-            else:
-                normal = 44.0
-                event = 56.0
+    def get_event_impact(
+        self,
+        city_name: Optional[str] = None,
+        location_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Calculates event impact and compares attendee surge vs normal commute days."""
+        city_id = None
+        loc_id = None
+        if location_id:
+            loc = self.repo.get_location_by_code(location_id)
+            if loc:
+                loc_id = loc.id
+                city_id = loc.city_id
+        elif city_name:
+            c = self.repo.get_city_by_name(city_name)
+            if c:
+                city_id = c.id
+        res = self.repo.get_event_impact_metrics(
+            city_id=city_id,
+            location_id=loc_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+        res["city"] = city_name
+        return res
 
-            hourly_comp.append({
-                "hour": h,
-                "normal_congestion": normal,
-                "event_congestion": event,
-            })
-
-        return {
-            "festival_delta": 24.5,
-            "holiday_delta": -18.2,
-            "hourly_comparison": hourly_comp,
-        }
-
-    def get_weather_impact(self) -> Dict[str, Any]:
-        rain_bands = [
-            {"intensity": "Dry (<0.5mm)", "avg_congestion": 38.2, "avg_speed_kmh": 46.5},
-            {"intensity": "Light (0.5-5mm)", "avg_congestion": 48.7, "avg_speed_kmh": 38.2},
-            {"intensity": "Moderate (5-15mm)", "avg_congestion": 63.4, "avg_speed_kmh": 27.5},
-            {"intensity": "Monsoon (>15mm)", "avg_congestion": 79.1, "avg_speed_kmh": 16.8},
-        ]
-        temp_bands = [
-            {"temp_range": "10 - 18°C (Winter)", "avg_congestion": 46.2},
-            {"temp_range": "19 - 26°C (Mild)", "avg_congestion": 44.8},
-            {"temp_range": "27 - 35°C (Warm)", "avg_congestion": 47.1},
-            {"temp_range": "36 - 45°C (Heatwave)", "avg_congestion": 42.4},
-        ]
-
-        return {
-            "heavy_rain_surge": 22.8,
-            "rain_correlation": 0.44,
-            "temp_correlation": -0.12,
-            "rain_bands": rain_bands,
-            "temp_bands": temp_bands,
-        }
+    def get_weather_impact(
+        self,
+        city_name: Optional[str] = None,
+        location_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Calculates actual meteorological correlation curves and precipitation bins from DB."""
+        city_id = None
+        loc_id = None
+        if location_id:
+            loc = self.repo.get_location_by_code(location_id)
+            if loc:
+                loc_id = loc.id
+                city_id = loc.city_id
+        elif city_name:
+            c = self.repo.get_city_by_name(city_name)
+            if c:
+                city_id = c.id
+        res = self.repo.get_weather_impact_data(
+            city_id=city_id,
+            location_id=loc_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+        res["city"] = city_name
+        res["location_id"] = location_id
+        return res

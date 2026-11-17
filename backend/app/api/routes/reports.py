@@ -1,61 +1,95 @@
 import io
 import csv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from backend.app.database.session import get_db, SessionLocal
+from backend.app.repositories.data_repository import DataRepository
+from backend.app.models.entities import City, Location, TrafficRecord, ModelMetadata
 
 router = APIRouter(tags=["Reports & Exports"])
 
-@router.get("/reports/export/{dataset_id}")
-def export_dataset(dataset_id: str):
+@router.get("/reports/export/{dataset_id}", summary="Export structured analytical datasets formatted for Power BI / CSV")
+def export_dataset(dataset_id: str, db: Session = Depends(get_db)):
+    """Exports actual database-driven tables as CSV attachments for tabular ingestion and Power BI reporting."""
+    if not isinstance(db, Session):
+        db = SessionLocal()
+    repo = DataRepository(db)
     output = io.StringIO()
     writer = csv.writer(output)
 
     if dataset_id == "city_summary":
         writer.writerow(["city_code", "city_name", "state", "latitude", "longitude", "avg_congestion_pct", "corridors_monitored"])
-        writer.writerow(["DEL", "Delhi", "Delhi NCT", 28.6139, 77.2090, 46.5, 5])
-        writer.writerow(["BOM", "Mumbai", "Maharashtra", 19.0760, 72.8777, 49.0, 5])
-        writer.writerow(["BLR", "Bengaluru", "Karnataka", 12.9716, 77.5946, 54.0, 5])
-        writer.writerow(["HYD", "Hyderabad", "Telangana", 17.3850, 78.4867, 43.0, 5])
-        writer.writerow(["CCU", "Kolkata", "West Bengal", 22.5726, 88.3639, 41.5, 5])
+        cities = repo.get_all_cities()
+        for c in cities:
+            avg_c = db.query(func.avg(TrafficRecord.congestion_percentage))\
+                .join(Location, Location.id == TrafficRecord.location_id)\
+                .filter(Location.city_id == c.id)\
+                .scalar()
+            loc_cnt = len(repo.get_locations_by_city_id(c.id))
+            writer.writerow([
+                c.city_code, c.city_name, c.state, c.latitude, c.longitude,
+                round(float(avg_c), 1) if avg_c is not None else 0.0,
+                loc_cnt
+            ])
 
     elif dataset_id == "location_summary":
         writer.writerow(["location_code", "city", "location_name", "corridor_name", "road_type", "lanes", "free_flow_speed", "observed_speed", "avg_congestion_pct"])
-        writer.writerow(["DEL_001", "Delhi", "Laxmi Nagar", "Vikas Marg Arterial", "primary", 6, 55.0, 26.4, 52.0])
-        writer.writerow(["DEL_002", "Delhi", "Connaught Place", "Radial Commercial Ring", "primary", 4, 45.0, 24.3, 46.0])
-        writer.writerow(["BOM_001", "Mumbai", "Andheri West / East", "SV Road & Western Express", "trunk", 8, 65.0, 27.3, 58.0])
-        writer.writerow(["BLR_001", "Bengaluru", "Whitefield", "ITPB Main Road", "primary", 4, 50.0, 21.5, 57.0])
-        writer.writerow(["BLR_002", "Bengaluru", "Central Silk Board", "Hosur Outer Ring Junction", "trunk", 8, 60.0, 19.8, 67.0])
-        writer.writerow(["HYD_001", "Hyderabad", "HITEC City", "Cyber Towers Arterial", "trunk", 6, 60.0, 31.8, 47.0])
-        writer.writerow(["CCU_001", "Kolkata", "Salt Lake Sector V", "College More Major Arterial", "primary", 6, 50.0, 28.5, 43.0])
+        cities = repo.get_all_cities()
+        for c in cities:
+            corridors = repo.get_city_corridors_with_stats(c.id)
+            for loc in corridors:
+                writer.writerow([
+                    loc["location_code"], c.city_name, loc["location_name"], loc["corridor_name"],
+                    loc["road_type"], loc["road_lanes"], loc["speed_limit_kmh"],
+                    loc["observed_speed_kmh"], loc["avg_congestion_pct"]
+                ])
 
     elif dataset_id == "hourly_patterns":
         writer.writerow(["hour_of_day", "is_peak", "weekday_avg_congestion", "weekend_avg_congestion"])
-        for h in range(24):
-            is_peak = (8 <= h <= 11) or (17 <= h <= 21)
-            wd = 74.0 if is_peak else 38.0 + (h % 3) * 3
-            we = 45.0 if is_peak else 32.0 + (h % 2) * 2
-            writer.writerow([h, int(is_peak), wd, we])
+        dist = repo.get_hourly_weekday_weekend_distribution()
+        for item in dist:
+            h = item["hour"]
+            is_peak = int((8 <= h <= 11) or (17 <= h <= 21))
+            writer.writerow([
+                h, is_peak,
+                item["weekday_congestion"] if item["weekday_congestion"] is not None else "",
+                item["weekend_congestion"] if item["weekend_congestion"] is not None else ""
+            ])
 
     elif dataset_id == "weather_impact":
-        writer.writerow(["precipitation_band", "min_rain_mm", "max_rain_mm", "observed_congestion_pct", "speed_reduction_pct"])
-        writer.writerow(["Dry", 0.0, 0.5, 38.2, 0.0])
-        writer.writerow(["Light Rain", 0.5, 5.0, 48.7, 18.0])
-        writer.writerow(["Moderate Rain", 5.0, 15.0, 63.4, 41.0])
-        writer.writerow(["Heavy Monsoon", 15.0, 80.0, 79.1, 64.0])
+        writer.writerow(["precipitation_band", "avg_congestion_pct", "avg_speed_kmh", "sample_count"])
+        weather_stats = repo.get_weather_impact_data()
+        for band in weather_stats["rain_bands"]:
+            writer.writerow([
+                band["band"], band["avg_congestion"], band["avg_speed_kmh"], band["sample_count"]
+            ])
 
     elif dataset_id == "model_evaluation":
-        writer.writerow(["model_key", "model_name", "mae", "rmse", "r2_score", "is_champion"])
-        writer.writerow(["historical_mean", "Historical Mean Baseline", 11.45, 14.82, 0.542, 0])
-        writer.writerow(["linear_regression", "Linear Regression (Ridge)", 8.32, 10.95, 0.698, 0])
-        writer.writerow(["random_forest", "Random Forest Regressor", 4.88, 6.54, 0.841, 0])
-        writer.writerow(["xgboost", "XGBoost Regressor", 3.65, 4.92, 0.895, 1])
+        writer.writerow(["model_key", "model_name", "algorithm_family", "mae", "rmse", "r2_score", "is_champion"])
+        models = repo.get_all_model_metadata()
+        for m in models:
+            writer.writerow([
+                m.model_key, m.model_name, m.algorithm_family, m.mae, m.rmse, m.r2_score, int(m.is_primary)
+            ])
 
     else:
-        # Generic sample
-        writer.writerow(["city", "timestamp", "location", "temperature_c", "precipitation_mm", "congestion_pct"])
-        writer.writerow(["Delhi", "2019-10-15 18:00", "Laxmi Nagar", 27.5, 0.0, 56.4])
-        writer.writerow(["Mumbai", "2019-07-20 19:00", "Andheri", 29.0, 22.5, 82.1])
-        writer.writerow(["Bengaluru", "2019-09-12 18:30", "Central Silk Board", 23.5, 8.0, 76.8])
+        # Default / gold_master_sample: real traffic records
+        writer.writerow(["city", "location_code", "timestamp", "hour", "day_of_week", "observed_speed_kmh", "free_flow_speed_kmh", "congestion_pct", "category"])
+        records = db.query(TrafficRecord).join(Location).join(City).limit(500).all()
+        for r in records:
+            writer.writerow([
+                r.location.city.city_name if r.location and r.location.city else "Metropolitan",
+                r.location.location_code if r.location else "",
+                r.timestamp.isoformat(),
+                r.hour,
+                r.day_of_week,
+                r.observed_speed_kmh,
+                r.free_flow_speed_kmh,
+                r.congestion_percentage,
+                r.congestion_category
+            ])
 
     csv_data = output.getvalue()
     return Response(

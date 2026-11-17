@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     # External APIs
     OPEN_METEO_BASE_URL: str = "https://archive-api.open-meteo.com/v1/archive"
     OPEN_METEO_FORECAST_URL: str = "https://api.open-meteo.com/v1/forecast"
+    WEATHER_API_KEY: str = ""
+    WEATHER_PROVIDER_ENABLED: bool = True
+    WEATHER_PROVIDER_TIMEOUT: float = 2.5
     TICKETMASTER_API_KEY: str = ""
 
     model_config = SettingsConfigDict(

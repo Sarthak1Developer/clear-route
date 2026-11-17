@@ -17,20 +17,20 @@ class CityComparisonItem(BaseModel):
 
 class HourlyTrendItem(BaseModel):
     hour: int
-    avg_congestion: float
+    avg_congestion: Optional[float] = None
     is_peak: bool
 
 class WeeklyTrendItem(BaseModel):
     day: str
-    avg_congestion: float
+    avg_congestion: Optional[float] = None
 
 class MonthlyTrendItem(BaseModel):
     month: str
-    avg_congestion: float
+    avg_congestion: Optional[float] = None
 
 class WeatherCorrelationItem(BaseModel):
     band: str
-    avg_congestion: float
+    avg_congestion: Optional[float] = None
     sample_count: int
 
 class OverviewResponse(BaseModel):
@@ -94,8 +94,8 @@ class LocationTrendsResponse(BaseModel):
     avg_congestion: float
     peak_hour: int
     peak_hour_congestion: float
-    weekend_delta: float
-    rain_delta: float
+    weekend_delta: Optional[float] = None
+    rain_delta: Optional[float] = None
     hourly: List[Dict[str, Any]]
     weekly: List[Dict[str, Any]]
     monthly: List[Dict[str, Any]]
@@ -145,21 +145,79 @@ class EventItem(BaseModel):
     event_type: str
     event_date: str
     venue: Optional[str] = None
+    expected_attendance: Optional[int] = 0
     is_2026_future: bool
-    impact_delta: float
+    source: Optional[str] = Field(None, description="Official publication, gazette, or municipal advisory source")
+    source_verified: bool = Field(False, description="True only if source is confirmed and non-empty")
+    impact_delta: Optional[float] = Field(None, description="Actual observed percentage point difference from baseline or null if unobserved/future")
+
+class EventsListResponse(BaseModel):
+    city: str
+    total_events: int = 0
+    events: List[EventItem]
+    source_attribution: Optional[str] = "Official Gazettes, Municipal Advisories, and Event Organizers"
 
 class EventImpactResponse(BaseModel):
-    festival_delta: float
-    holiday_delta: float
-    hourly_comparison: List[Dict[str, Any]]
+    city: Optional[str] = None
+    festival_delta: Optional[float] = Field(None, description="Average percentage point surge on observed festival dates vs baseline")
+    holiday_delta: Optional[float] = Field(None, description="Average percentage point delta on observed public holiday dates vs baseline")
+    hourly_comparison: List[Dict[str, Any]] = Field(default_factory=list, description="Hourly baseline vs event congestion profiles")
+    data_backed: bool = Field(True, description="Indicates whether metrics are computed from ground-truth database records")
+    source: Optional[str] = Field("State Gazettes & Historical Traffic Database", description="Source provenance")
 
 # Weather
+class WeatherRecordItem(BaseModel):
+    id: int
+    city_name: str
+    timestamp: str
+    temperature_c: float
+    precipitation_mm: float
+    humidity_pct: float
+    wind_speed_kmh: float
+    weather_condition: Optional[str] = None
+    source: str = "Open-Meteo ERA5 Reanalysis"
+
+class WeatherHistoryResponse(BaseModel):
+    city: Optional[str] = None
+    location_id: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    total_records: int
+    limit: int
+    offset: int
+    source: str = "Open-Meteo ERA5 Reanalysis (Database Archive)"
+    records: List[WeatherRecordItem]
+
+class WeatherContext(BaseModel):
+    temperature_c: float
+    precipitation_mm: float
+    humidity_pct: float
+    wind_speed_kmh: float
+    weather_condition: Optional[str] = None
+    timestamp: Optional[str] = None
+    is_live: bool = False
+    source: Optional[str] = "Open-Meteo ERA5 Reanalysis (Database Archive)"
+
+class WeatherResponse(BaseModel):
+    city: str
+    location_id: Optional[str] = None
+    provenance: str
+    provider_available: bool = False
+    provider_status: str = "Historical Database Archive"
+    timestamp: Optional[str] = None
+    current_context: WeatherContext
+    forecast_scenario: Optional[Dict[str, Any]] = None
+    source: str = "Open-Meteo ERA5 Reanalysis (Database Archive)"
+
 class WeatherImpactResponse(BaseModel):
+    city: Optional[str] = None
+    location_id: Optional[str] = None
     heavy_rain_surge: float
     rain_correlation: float
     temp_correlation: float
     rain_bands: List[Dict[str, Any]]
     temp_bands: List[Dict[str, Any]]
+    source: Optional[str] = "Joined Traffic & Open-Meteo ERA5 Observations"
 
 # Models & Evaluation
 class ModelItem(BaseModel):
