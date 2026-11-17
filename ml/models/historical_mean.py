@@ -11,7 +11,7 @@ class HistoricalMeanBaseline:
     def __init__(self):
         self.lookup_table = {}
         self.corridor_means = {}
-        self.global_mean = 45.0
+        self.global_mean = 25.0
 
     def fit(self, train_df: pd.DataFrame):
         self.global_mean = float(train_df["congestion_percentage"].mean())
@@ -49,7 +49,7 @@ class HistoricalMeanBaseline:
         return np.array(preds)
 
     def save(self, filepath: str = "ml/artifacts/model_historical_mean.joblib"):
-        joblib.dump(self, filepath)
+        joblib.dump(self, filepath, compress=3)
 
     @classmethod
     def load(cls, filepath: str = "ml/artifacts/model_historical_mean.joblib"):

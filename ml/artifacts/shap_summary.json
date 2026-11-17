@@ -1,96 +1,191 @@
 {
   "global_importance": [
     {
-      "feature": "is_peak_hour",
-      "importance": 13.3925
-    },
-    {
       "feature": "hour",
-      "importance": 4.9516
+      "display_name": "Hour of Day (Diurnal Cycle)",
+      "category": "time_of_day",
+      "mean_abs_shap_pct": 10.3987
     },
     {
-      "feature": "rolling_speed_3h",
-      "importance": 0.1393
-    },
-    {
-      "feature": "temperature_2m_c",
-      "importance": 0.081
-    },
-    {
-      "feature": "road_lanes",
-      "importance": 0.0502
-    },
-    {
-      "feature": "length_m",
-      "importance": 0.0343
-    },
-    {
-      "feature": "free_flow_speed_kmh",
-      "importance": 0.0117
-    },
-    {
-      "feature": "precipitation_mm",
-      "importance": 0.0088
-    },
-    {
-      "feature": "month",
-      "importance": 0.0053
-    },
-    {
-      "feature": "accident_risk_score",
-      "importance": 0.0048
+      "feature": "is_peak_hour",
+      "display_name": "Peak Commute Rush Window",
+      "category": "time_of_day",
+      "mean_abs_shap_pct": 4.4211
     },
     {
       "feature": "lag_speed_1h",
-      "importance": 0.0032
-    },
-    {
-      "feature": "road_type_primary",
-      "importance": 0.0007
-    },
-    {
-      "feature": "relative_humidity_2m_pct",
-      "importance": 0.0006
-    },
-    {
-      "feature": "road_type_secondary",
-      "importance": 0.0004
-    },
-    {
-      "feature": "road_type_trunk",
-      "importance": 0.0002
-    },
-    {
-      "feature": "wind_speed_10m_kmh",
-      "importance": 0.0001
+      "display_name": "Corridor Speed 1-Hour Prior (t-1)",
+      "category": "traffic_history",
+      "mean_abs_shap_pct": 3.6736
     },
     {
       "feature": "day_of_week",
-      "importance": 0.0
+      "display_name": "Day of Week (Weekday vs Weekend)",
+      "category": "time_of_day",
+      "mean_abs_shap_pct": 2.0273
     },
     {
-      "feature": "event_type_Festival",
-      "importance": 0.0
+      "feature": "road_lanes",
+      "display_name": "Carriageway Lane Capacity",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 1.9995
     },
     {
-      "feature": "event_type_None",
-      "importance": 0.0
+      "feature": "rolling_speed_3h",
+      "display_name": "Rolling Mean Speed (Prior 3 Hours)",
+      "category": "traffic_history",
+      "mean_abs_shap_pct": 0.6886
+    },
+    {
+      "feature": "accident_risk_score",
+      "display_name": "MoRTH Contextual Accident Hazard",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 0.3374
     },
     {
       "feature": "is_weekend",
-      "importance": 0.0
+      "display_name": "Weekend Leisure Schedule",
+      "category": "time_of_day",
+      "mean_abs_shap_pct": 0.3135
     },
     {
-      "feature": "is_holiday",
-      "importance": 0.0
+      "feature": "free_flow_speed_kmh",
+      "display_name": "Design Free-Flow Speed (km/h)",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 0.213
     },
     {
-      "feature": "event_present",
-      "importance": 0.0
+      "feature": "relative_humidity_2m_pct",
+      "display_name": "Relative Atmospheric Humidity (%)",
+      "category": "weather_condition",
+      "mean_abs_shap_pct": 0.1033
+    },
+    {
+      "feature": "temperature_2m_c",
+      "display_name": "Ambient Air Temperature (\u00b0C)",
+      "category": "weather_condition",
+      "mean_abs_shap_pct": 0.1008
+    },
+    {
+      "feature": "length_m",
+      "display_name": "Physical Segment Length (m)",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 0.0871
+    },
+    {
+      "feature": "city_Kolkata",
+      "display_name": "Kolkata Metropolitan Core",
+      "category": "spatial_location",
+      "mean_abs_shap_pct": 0.0712
+    },
+    {
+      "feature": "precipitation_mm",
+      "display_name": "Precipitation Rate (mm/hr)",
+      "category": "weather_condition",
+      "mean_abs_shap_pct": 0.0622
+    },
+    {
+      "feature": "city_Hyderabad",
+      "display_name": "Hyderabad Cyberabad Region",
+      "category": "spatial_location",
+      "mean_abs_shap_pct": 0.0498
+    },
+    {
+      "feature": "month",
+      "display_name": "Seasonal Month",
+      "category": "time_of_day",
+      "mean_abs_shap_pct": 0.0206
+    },
+    {
+      "feature": "road_type_trunk",
+      "display_name": "High-Capacity Expressway / Trunk",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 0.0182
+    },
+    {
+      "feature": "wind_speed_10m_kmh",
+      "display_name": "Surface Wind Velocity (km/h)",
+      "category": "weather_condition",
+      "mean_abs_shap_pct": 0.0159
+    },
+    {
+      "feature": "city_Mumbai",
+      "display_name": "Mumbai MMR Corridor",
+      "category": "spatial_location",
+      "mean_abs_shap_pct": 0.0092
+    },
+    {
+      "feature": "road_type_primary",
+      "display_name": "Primary Arterial Corridor",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 0.006
+    },
+    {
+      "feature": "city_Delhi",
+      "display_name": "Delhi NCT Capital Region",
+      "category": "spatial_location",
+      "mean_abs_shap_pct": 0.005
+    },
+    {
+      "feature": "city_Bengaluru",
+      "display_name": "Bengaluru Metropolitan Region",
+      "category": "spatial_location",
+      "mean_abs_shap_pct": 0.0044
     },
     {
       "feature": "is_raining",
-      "importance": 0.0
+      "display_name": "Active Rainfall Indicator",
+      "category": "weather_condition",
+      "mean_abs_shap_pct": 0.0021
+    },
+    {
+      "feature": "road_type_secondary",
+      "display_name": "Secondary Commercial Road",
+      "category": "road_characteristics",
+      "mean_abs_shap_pct": 0.0014
+    },
+    {
+      "feature": "event_intensity",
+      "display_name": "Event Congestion Intensity Factor",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0002
+    },
+    {
+      "feature": "is_holiday",
+      "display_name": "Gazetted Public Holiday",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0002
+    },
+    {
+      "feature": "event_type_Festival",
+      "display_name": "Major Religious / Cultural Festival",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0001
+    },
+    {
+      "feature": "event_type_None",
+      "display_name": "Event Type None",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0
+    },
+    {
+      "feature": "event_type_Public Holiday",
+      "display_name": "Event Type Public Holiday",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0
+    },
+    {
+      "feature": "event_type_Sports",
+      "display_name": "Stadium Sporting Match",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0
+    },
+    {
+      "feature": "event_present",
+      "display_name": "Active Cultural / Stadium Event",
+      "category": "events_and_holidays",
+      "mean_abs_shap_pct": 0.0
     }
-  ]
+  ],
+  "base_value": 24.050964
 }

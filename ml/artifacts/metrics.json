@@ -1,51 +1,44 @@
 {
   "evaluation_partition": "Held-Out Chronological Test Set (15%)",
-  "total_test_samples": 900,
+  "total_test_samples": 24750,
   "best_model": "historical_mean",
   "models": {
     "historical_mean": {
       "name": "Historical Mean Baseline",
       "family": "Spatio-Temporal Segment Lookup",
       "role": "Statistical Baseline",
-      "mae": 0.0,
-      "rmse": 0.0,
-      "r2": 1.0,
-      "residual_mean": 0.0,
-      "residual_std": 0.0,
-      "is_primary": false
+      "mae": 2.675,
+      "rmse": 3.405,
+      "r2": 0.9722,
+      "is_primary": true
     },
     "linear_regression": {
       "name": "Linear Regression (Ridge)",
       "family": "Regularized Parametric Estimator",
       "role": "Interpretable Baseline",
-      "mae": 0.032,
-      "rmse": 0.038,
-      "r2": 1.0,
-      "residual_mean": -0.001,
-      "residual_std": 0.038,
+      "mae": 8.646,
+      "rmse": 11.118,
+      "r2": 0.7038,
+      "tuned_alpha": 100.0,
       "is_primary": false
     },
     "random_forest": {
       "name": "Random Forest Regressor",
       "family": "Multi-Tree Bagging Ensemble",
       "role": "Non-linear Ensemble",
-      "mae": 0.0,
-      "rmse": 0.0,
-      "r2": 1.0,
-      "residual_mean": -0.0,
-      "residual_std": 0.0,
+      "mae": 4.688,
+      "rmse": 6.154,
+      "r2": 0.9093,
       "is_primary": false
     },
     "xgboost": {
       "name": "XGBoost Regressor",
       "family": "Gradient Boosted Trees",
       "role": "Primary Forecasting Model",
-      "mae": 0.033,
-      "rmse": 0.057,
-      "r2": 1.0,
-      "residual_mean": 0.007,
-      "residual_std": 0.057,
-      "is_primary": true
+      "mae": 2.727,
+      "rmse": 3.464,
+      "r2": 0.9712,
+      "is_primary": false
     }
   }
 }

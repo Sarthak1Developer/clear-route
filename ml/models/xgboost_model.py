@@ -9,21 +9,29 @@ class XGBoostModel:
     """
     def __init__(
         self,
-        n_estimators: int = 150,
-        learning_rate: float = 0.05,
-        max_depth: int = 6,
-        subsample: float = 0.8,
-        colsample_bytree: float = 0.8,
+        n_estimators: int = 100,
+        learning_rate: float = 0.08,
+        max_depth: int = 5,
+        subsample: float = 0.85,
+        colsample_bytree: float = 0.85,
         random_state: int = 42
     ):
+        self.n_estimators = n_estimators
+        self.learning_rate = learning_rate
+        self.max_depth = max_depth
+        self.subsample = subsample
+        self.colsample_bytree = colsample_bytree
+        self.random_state = random_state
+
         self.model = XGBRegressor(
-            n_estimators=n_estimators,
-            learning_rate=learning_rate,
-            max_depth=max_depth,
-            subsample=subsample,
-            colsample_bytree=colsample_bytree,
+            n_estimators=self.n_estimators,
+            learning_rate=self.learning_rate,
+            max_depth=self.max_depth,
+            subsample=self.subsample,
+            colsample_bytree=self.colsample_bytree,
             objective="reg:squarederror",
-            random_state=random_state,
+            random_state=self.random_state,
+            tree_method="hist",  # High speed, low memory histogram algorithm
             n_jobs=-1
         )
 
@@ -40,7 +48,7 @@ class XGBoostModel:
         return self.model.feature_importances_
 
     def save(self, filepath: str = "ml/artifacts/model_xgboost.joblib"):
-        joblib.dump(self.model, filepath)
+        joblib.dump(self.model, filepath, compress=3)
 
     def load(self, filepath: str = "ml/artifacts/model_xgboost.joblib"):
         self.model = joblib.load(filepath)

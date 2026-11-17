@@ -46,15 +46,27 @@ In traffic and spatio-temporal modeling, random data splitting (e.g. standard K-
 
 ---
 
-## 3. Evaluation Metrics
+## 3. Evaluation Metrics & Empirical Results
 
-Every model is evaluated strictly on the unobserved 15% Test partition across three criteria:
+Every model is evaluated strictly on the unobserved 15% Test partition (24,750 hourly samples from Nov 21 to Dec 31, 2019) across three criteria:
 1. **Mean Absolute Error (MAE)**:
    $$\text{MAE} = \frac{1}{N} \sum_{i=1}^N |y_i - \hat{y}_i|$$
 2. **Root Mean Squared Error (RMSE)**:
    $$\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i=1}^N (y_i - \hat{y}_i)^2}$$
 3. **Coefficient of Determination ($R^2$)**:
    $$R^2 = 1 - \frac{\sum_{i=1}^N (y_i - \hat{y}_i)^2}{\sum_{i=1}^N (y_i - \bar{y})^2}$$
+
+### Verified Held-Out Test Evaluation Results
+Evaluated chronologically without random shuffling or data leakage:
+
+| Model | Model Family | Role / Purpose | Test MAE (%) | Test RMSE | Test $R^2$ | Status |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: |
+| **Historical Mean Baseline** | Spatio-Temporal Lookup | Statistical Baseline | **2.675%** | **3.405** | **0.9722** | Selected Best Overall |
+| **XGBoost Regressor** | Gradient Boosted Trees | Primary Dynamic Forecaster | **2.727%** | **3.464** | **0.9712** | Selected Primary Forecaster |
+| **Random Forest Regressor** | Bagging Ensemble | Non-linear Tree Benchmark | 4.688% | 6.154 | 0.9093 | Evaluated Benchmark |
+| **Linear Regression (Ridge)** | Regularized Parametric | Interpretable Linear Baseline | 8.646% | 11.118 | 0.7038 | Evaluated Baseline ($\alpha=100$) |
+
+> **Key Model Selection Insight**: The Historical Mean Baseline ($MAE = 2.675\%$) provides the most accurate estimation for standard repeating day-of-week/hour diurnal congestion. However, XGBoost ($MAE = 2.727\%$) is indispensable for dynamic multi-feature scenario analysis because it captures sensitivity to precipitation, unexpected public events, and upstream speed fluctuations that static lookup tables cannot model.
 
 ---
 
@@ -78,7 +90,7 @@ All preprocessing pipelines (standard scalers, one-hot encoders, category indice
 - `ml/artifacts/model_linear_regression.joblib`
 - `ml/artifacts/model_random_forest.joblib`
 - `ml/artifacts/model_xgboost.joblib`
-- `ml/artifacts/model_metrics.json`
+- `ml/artifacts/metrics.json`
 - `ml/artifacts/shap_summary.json`
 
 The FastAPI inference service loads these artifacts into memory on startup, ensuring instantaneous sub-20ms prediction times without retraining.

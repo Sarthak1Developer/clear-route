@@ -1,26 +1,26 @@
 city,location_id,location_name,road_type,road_lanes,avg_congestion_pct,free_flow_speed_kmh,mean_observed_speed_kmh,accident_risk_score,total_observations
-Bengaluru,BLR_001,Whitefield,primary,4,36.5,50.0,31.8,0.7,240
-Bengaluru,BLR_002,Central Silk Board,trunk,8,36.5,60.0,38.1,0.85,240
-Bengaluru,BLR_003,Koramangala,secondary,4,36.56,45.0,28.6,0.5,240
-Bengaluru,BLR_004,Indiranagar,secondary,4,36.56,45.0,28.6,0.45,240
-Bengaluru,BLR_005,Electronic City,trunk,8,36.5,80.0,50.8,0.55,240
-Delhi,DEL_001,Laxmi Nagar,primary,6,36.54,55.0,34.9,0.65,240
-Delhi,DEL_002,Connaught Place,primary,4,36.56,45.0,28.6,0.45,240
-Delhi,DEL_003,Karol Bagh,secondary,4,36.56,45.0,28.6,0.55,240
-Delhi,DEL_004,Hauz Khas,trunk,8,36.54,65.0,41.2,0.5,240
-Delhi,DEL_005,Nehru Place,primary,6,36.54,55.0,34.9,0.6,240
-Hyderabad,HYD_001,HITEC City,trunk,6,36.5,60.0,38.1,0.5,240
-Hyderabad,HYD_002,Gachibowli,trunk,8,36.5,70.0,44.4,0.45,240
-Hyderabad,HYD_003,Banjara Hills,primary,4,36.5,50.0,31.8,0.55,240
-Hyderabad,HYD_004,Begumpet,primary,6,36.54,55.0,34.9,0.6,240
-Hyderabad,HYD_005,Secunderabad,primary,4,36.5,40.0,25.4,0.7,240
-Kolkata,CCU_001,Salt Lake Sector V,primary,6,36.54,55.0,34.9,0.45,240
-Kolkata,CCU_002,Park Street,secondary,4,36.5,40.0,25.4,0.5,240
-Kolkata,CCU_003,Howrah Station Approach,trunk,6,36.56,45.0,28.6,0.8,240
-Kolkata,CCU_004,New Town,trunk,8,36.5,70.0,44.4,0.4,240
-Kolkata,CCU_005,Esplanade,primary,6,36.56,45.0,28.6,0.65,240
-Mumbai,BOM_001,Andheri,trunk,8,36.54,65.0,41.2,0.75,240
-Mumbai,BOM_002,BKC,primary,6,36.54,55.0,34.9,0.4,240
-Mumbai,BOM_003,Dadar,primary,6,36.5,50.0,31.8,0.7,240
-Mumbai,BOM_004,Powai,trunk,6,36.5,60.0,38.1,0.6,240
-Mumbai,BOM_005,Borivali,trunk,8,36.5,70.0,44.4,0.55,240
+Bengaluru,BLR_001,Whitefield,primary,4,30.27,50.0,34.9,0.7,6600
+Bengaluru,BLR_002,Central Silk Board,trunk,8,20.48,60.0,47.8,0.85,6600
+Bengaluru,BLR_003,Koramangala,secondary,4,28.61,45.0,32.1,0.5,6600
+Bengaluru,BLR_004,Indiranagar,secondary,4,28.21,45.0,32.3,0.45,6600
+Bengaluru,BLR_005,Electronic City,trunk,8,18.88,80.0,65.0,0.55,6600
+Delhi,DEL_001,Laxmi Nagar,primary,6,24.0,55.0,41.8,0.65,6600
+Delhi,DEL_002,Connaught Place,primary,4,28.18,45.0,32.3,0.45,6600
+Delhi,DEL_003,Karol Bagh,secondary,4,29.0,45.0,32.0,0.55,6600
+Delhi,DEL_004,Hauz Khas,trunk,8,18.72,65.0,52.9,0.5,6600
+Delhi,DEL_005,Nehru Place,primary,6,23.53,55.0,42.1,0.6,6600
+Hyderabad,HYD_001,HITEC City,trunk,6,22.79,60.0,46.4,0.5,6600
+Hyderabad,HYD_002,Gachibowli,trunk,8,18.49,70.0,57.1,0.45,6600
+Hyderabad,HYD_003,Banjara Hills,primary,4,29.09,50.0,35.5,0.55,6600
+Hyderabad,HYD_004,Begumpet,primary,6,23.49,55.0,42.1,0.6,6600
+Hyderabad,HYD_005,Secunderabad,primary,4,30.3,40.0,27.9,0.7,6600
+Kolkata,CCU_001,Salt Lake Sector V,primary,6,22.47,55.0,42.7,0.45,6600
+Kolkata,CCU_002,Park Street,secondary,4,28.66,40.0,28.5,0.5,6600
+Kolkata,CCU_003,Howrah Station Approach,trunk,6,25.06,45.0,33.8,0.8,6600
+Kolkata,CCU_004,New Town,trunk,8,18.22,70.0,57.3,0.4,6600
+Kolkata,CCU_005,Esplanade,primary,6,24.02,45.0,34.3,0.65,6600
+Mumbai,BOM_001,Andheri,trunk,8,19.92,65.0,52.1,0.75,6600
+Mumbai,BOM_002,BKC,primary,6,22.12,55.0,42.9,0.4,6600
+Mumbai,BOM_003,Dadar,primary,6,24.36,50.0,37.9,0.7,6600
+Mumbai,BOM_004,Powai,trunk,6,23.48,60.0,46.0,0.6,6600
+Mumbai,BOM_005,Borivali,trunk,8,18.92,70.0,56.8,0.55,6600
