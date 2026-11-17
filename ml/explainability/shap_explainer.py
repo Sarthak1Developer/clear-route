@@ -26,9 +26,13 @@ import numpy as np
 import pandas as pd
 import joblib
 import shap
-import matplotlib
-matplotlib.use("Agg")  # Non-interactive backend
-import matplotlib.pyplot as plt
+try:
+    import matplotlib
+    matplotlib.use("Agg")  # Non-interactive backend
+    import matplotlib.pyplot as plt
+except ImportError:
+    matplotlib = None
+    plt = None
 
 logger = logging.getLogger("clearroute.ml.shap")
 
@@ -298,6 +302,9 @@ class TrafficShapExplainer:
         sample_idx: int = 0
     ):
         """Generates visual SHAP beeswarm, feature importance bar, and individual waterfall plots."""
+        if plt is None:
+            logger.warning("matplotlib is not installed; skipping plot generation.")
+            return
         os.makedirs(plots_dir, exist_ok=True)
         shap_explanation = self.explainer(X_sample)
         shap_explanation.feature_names = [HUMAN_READABLE_NAMES.get(f, f) for f in self.feature_names]

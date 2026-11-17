@@ -67,20 +67,21 @@ export const Reports = () => {
   const handleExport = async (datasetId) => {
     try {
       setDownloading(datasetId);
-      // Trigger download from backend
+      const baseUrl = import.meta.env.VITE_API_URL || '/api';
       const link = document.createElement('a');
-      link.href = `/api/reports/export/${datasetId}`;
+      link.href = `${baseUrl}/reports/export/${encodeURIComponent(datasetId)}`;
       link.setAttribute('download', `clearroute_${datasetId}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast(`Exported ${datasetId}.csv successfully`, 'success');
+      showToast(`Exported clearroute_${datasetId}.csv successfully`, 'success');
     } catch (err) {
       showToast(`Export failed: ${err.message}`, 'error');
     } finally {
       setTimeout(() => setDownloading(null), 1000);
     }
   };
+
 
   return (
     <div className="space-y-6">

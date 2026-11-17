@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from backend.app.database.session import get_db
 from backend.app.schemas.schemas import HealthResponse
-from ml.inference.predict import engine
+from backend.app.services.inference_service import inference_service
 
 router = APIRouter(tags=["Health"])
 
@@ -17,7 +17,7 @@ def health_check(db: Session = Depends(get_db)):
     except Exception as e:
         db_status = f"unhealthy ({str(e)})"
 
-    loaded = list(engine.models.keys()) if engine and engine.models else ["historical_mean", "linear_regression", "random_forest", "xgboost"]
+    loaded = inference_service.get_loaded_models()
 
     return {
         "status": "online",

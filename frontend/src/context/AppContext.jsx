@@ -11,13 +11,55 @@ export const CITIES = [
   { code: 'CCU', name: 'Kolkata', state: 'West Bengal', lat: 22.5726, lng: 88.3639, zoom: 12 },
 ];
 
+const DEFAULT_SETTINGS = {
+  defaultCityCode: 'DEL',
+  defaultModel: 'xgboost',
+  temperatureUnit: 'C',
+  refreshInterval: 30,
+  toastEnabled: true,
+  mapZoom: 12,
+};
+
 export const AppProvider = ({ children }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [cities, setCities] = useState(CITIES);
   const [selectedCity, setSelectedCity] = useState(CITIES[0]);
   const [healthStatus, setHealthStatus] = useState({ online: false, checking: true, details: null });
   const [toast, setToast] = useState(null);
 
+  // Persistent settings state
+  const [settings, setSettings] = useState(() => {
+    try {
+      const stored = localStorage.getItem('clearroute_settings');
+      return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
+  });
+
+  const updateSettings = (newSettings) => {
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      try {
+        localStorage.setItem('clearroute_settings', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save settings:', e);
+      }
+      return updated;
+    });
+  };
+
+  const resetSettings = () => {
+    setSettings(DEFAULT_SETTINGS);
+    try {
+      localStorage.removeItem('clearroute_settings');
+    } catch (e) {
+      console.error('Failed to reset settings:', e);
+    }
+  };
+
   const showToast = (message, type = 'info') => {
+    if (!settings.toastEnabled && type !== 'error') return;
     setToast({ message, type, id: Date.now() });
     setTimeout(() => setToast(null), 4000);
   };
@@ -31,11 +73,37 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Load real cities from backend
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchCities() {
+      try {
+        const fetched = await api.getCities();
+        if (isMounted && Array.isArray(fetched) && fetched.length > 0) {
+          setCities(fetched);
+          // If default city setting is configured, select it
+          const preferred = fetched.find((c) => c.code === settings.defaultCityCode);
+          if (preferred) {
+            setSelectedCity(preferred);
+          } else {
+            setSelectedCity(fetched[0]);
+          }
+        }
+      } catch {
+        // Keep initial CITIES
+      }
+    }
+    fetchCities();
+    return () => { isMounted = false; };
+  }, [settings.defaultCityCode]);
+
   useEffect(() => {
     checkHealth();
-    const interval = setInterval(checkHealth, 30000);
+    const intervalSec = Number(settings.refreshInterval) || 30;
+    if (intervalSec <= 0) return;
+    const interval = setInterval(checkHealth, intervalSec * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [settings.refreshInterval]);
 
   return (
     <AppContext.Provider
@@ -44,16 +112,20 @@ export const AppProvider = ({ children }) => {
         setActiveTab,
         selectedCity,
         setSelectedCity,
-        cities: CITIES,
+        cities,
         healthStatus,
         checkHealth,
         toast,
         showToast,
+        settings,
+        updateSettings,
+        resetSettings,
       }}
     >
       {children}
     </AppContext.Provider>
   );
 };
+
 
 export const useApp = () => useContext(AppContext);

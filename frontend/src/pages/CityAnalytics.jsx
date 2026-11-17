@@ -96,18 +96,18 @@ export const CityAnalytics = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="City Mean Congestion"
-              value={`${(summary.avg_congestion_pct || 45).toFixed(1)}%`}
+              value={summary.avg_congestion_pct !== undefined && summary.avg_congestion_pct !== null ? `${summary.avg_congestion_pct.toFixed(1)}%` : '0.0%'}
               icon={Gauge}
               accentColor="cyan"
-              description={`Category: ${summary.congestion_category || 'Moderate'}`}
+              description={`Category: ${summary.congestion_category || 'Normal'}`}
             />
             <MetricCard
               title="Peak Congestion Window"
-              value={summary.peak_hours_str || '18:00 - 20:00'}
+              value={summary.peak_hours_str || 'N/A'}
               unit="IST"
               icon={Clock}
               accentColor="amber"
-              description={`Peak Congestion: ${summary.peak_hour_congestion_pct || 68}%`}
+              description={summary.peak_hour_congestion_pct !== undefined && summary.peak_hour_congestion_pct !== null ? `Peak Congestion: ${summary.peak_hour_congestion_pct}%` : 'Off-Peak Interval'}
             />
             <MetricCard
               title="Supported Corridors"
@@ -119,12 +119,13 @@ export const CityAnalytics = () => {
             />
             <MetricCard
               title="Monsoon Rainfall Delta"
-              value={`+${(summary.rain_impact_delta || 18.4).toFixed(1)}%`}
+              value={summary.rain_impact_delta !== undefined && summary.rain_impact_delta !== null ? `+${summary.rain_impact_delta.toFixed(1)}%` : '0.0%'}
               icon={CloudRain}
               accentColor="rose"
               description="Congestion surge during heavy rain"
             />
           </div>
+
 
           {/* Interactive Geospatial Leaflet Map */}
           <div className="space-y-2">

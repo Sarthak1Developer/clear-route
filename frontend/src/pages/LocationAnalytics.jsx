@@ -182,34 +182,35 @@ export const LocationAnalytics = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                   title="Historical Congestion"
-                  value={`${(trends.avg_congestion || 48.5).toFixed(1)}%`}
+                  value={trends.avg_congestion !== undefined && trends.avg_congestion !== null ? `${trends.avg_congestion.toFixed(1)}%` : '0.0%'}
                   icon={Compass}
                   accentColor="cyan"
                   description="Apr - Dec 2019 Mean"
                 />
                 <MetricCard
                   title="Peak Bottleneck Hour"
-                  value={`${trends.peak_hour || 18}:00`}
+                  value={trends.peak_hour !== undefined && trends.peak_hour !== null ? `${trends.peak_hour}:00` : 'N/A'}
                   unit="IST"
                   icon={Clock}
                   accentColor="rose"
-                  description={`Peak Severity: ${trends.peak_hour_congestion || 72}%`}
+                  description={trends.peak_hour_congestion !== undefined && trends.peak_hour_congestion !== null ? `Peak Severity: ${trends.peak_hour_congestion}%` : 'Off-Peak Normal'}
                 />
                 <MetricCard
                   title="Weekday vs Weekend Delta"
-                  value={`${trends.weekend_delta > 0 ? '+' : ''}${trends.weekend_delta || -12.4}%`}
+                  value={trends.weekend_delta !== undefined && trends.weekend_delta !== null ? `${trends.weekend_delta > 0 ? '+' : ''}${trends.weekend_delta}%` : '0.0%'}
                   icon={Calendar}
                   accentColor="blue"
                   description="Weekday congestion premium"
                 />
                 <MetricCard
                   title="Precipitation Sensitivity"
-                  value={`+${trends.rain_delta || 19.8}%`}
+                  value={trends.rain_delta !== undefined && trends.rain_delta !== null ? `+${trends.rain_delta}%` : '0.0%'}
                   icon={CloudRain}
                   accentColor="amber"
                   description="Precipitation > 10mm impact"
                 />
               </div>
+
 
               {/* Hourly Trend Chart */}
               <Card

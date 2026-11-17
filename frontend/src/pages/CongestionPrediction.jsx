@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const CongestionPrediction = () => {
-  const { cities, selectedCity, setSelectedCity, showToast } = useApp();
+  const { cities, selectedCity, setSelectedCity, showToast, settings } = useApp();
   const [locations, setLocations] = useState([]);
   const [selectedLocationId, setSelectedLocationId] = useState('');
   const [loadingLocations, setLoadingLocations] = useState(false);
@@ -24,7 +24,8 @@ export const CongestionPrediction = () => {
   // Form Inputs
   const [predictionDate, setPredictionDate] = useState('2026-11-05');
   const [predictionHour, setPredictionHour] = useState(18); // 18:00 IST
-  const [modelType, setModelType] = useState('xgboost'); // historical_mean, linear_regression, random_forest, xgboost
+  const [modelType, setModelType] = useState(settings?.defaultModel || 'xgboost'); // historical_mean, linear_regression, random_forest, xgboost
+
   const [temperature, setTemperature] = useState(28.0);
   const [precipitation, setPrecipitation] = useState(12.5);
   const [humidity, setHumidity] = useState(75.0);
@@ -365,16 +366,27 @@ export const CongestionPrediction = () => {
               <div className="bg-[#111827] border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
                   <div>
-                    <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-wider font-semibold">
-                      Forecast Result · {predictionResult.selected_model.toUpperCase()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-wider font-semibold">
+                        {predictionResult.model_name || predictionResult.selected_model.toUpperCase()}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                        v{predictionResult.model_version || '1.0.0'}
+                      </span>
+                    </div>
                     <h3 className="text-xl font-bold text-white mt-1">
                       {selectedLocObj?.location_name || 'Selected Corridor'}
                     </h3>
-                    <p className="text-xs text-slate-400">
-                      {predictionResult.prediction_date} at {predictionResult.prediction_time} IST
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Target: {predictionResult.prediction_date} at {predictionResult.prediction_time} IST
                     </p>
+                    {predictionResult.timestamp && (
+                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                        Inference Timestamp: {predictionResult.timestamp}
+                      </p>
+                    )}
                   </div>
+
 
                   <div className="text-right">
                     <span className="text-3xl font-extrabold font-mono text-slate-50">
@@ -397,9 +409,12 @@ export const CongestionPrediction = () => {
                   <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
                     <span className="text-slate-400 text-[10px] uppercase font-bold">Historical Baseline</span>
                     <p className="text-base font-bold text-slate-400 font-mono mt-0.5">
-                      {(predictionResult.historical_baseline_pct || 48.0).toFixed(1)}%
+                      {predictionResult.historical_baseline_pct !== undefined && predictionResult.historical_baseline_pct !== null
+                        ? `${predictionResult.historical_baseline_pct.toFixed(1)}%`
+                        : 'N/A'}
                     </p>
                   </div>
+
                   <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
                     <span className="text-slate-400 text-[10px] uppercase font-bold">Scenario Delta</span>
                     <p

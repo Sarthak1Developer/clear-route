@@ -29,7 +29,7 @@ export const EventImpact = () => {
         setLoading(true);
         const [evRes, impRes] = await Promise.all([
           api.getEvents(selectedCity.name),
-          api.getEventImpact(),
+          api.getEventImpact(selectedCity.name),
         ]);
         if (isMounted) {
           setEventData(evRes.events || []);
@@ -42,6 +42,7 @@ export const EventImpact = () => {
         if (isMounted) setLoading(false);
       }
     }
+
     loadData();
     return () => { isMounted = false; };
   }, [selectedCity]);
@@ -101,25 +102,30 @@ export const EventImpact = () => {
         />
         <MetricCard
           title="Festival Congestion Premium"
-          value={`+${(impactData?.festival_delta || 24.5).toFixed(1)}%`}
+          value={impactData?.festival_delta !== undefined && impactData?.festival_delta !== null
+            ? `+${impactData.festival_delta.toFixed(1)}%`
+            : '0.0%'}
           icon={Sparkles}
           accentColor="rose"
           description="Surge around arterial retail rings"
         />
         <MetricCard
           title="National Holiday Delta"
-          value={`${(impactData?.holiday_delta || -18.2).toFixed(1)}%`}
+          value={impactData?.holiday_delta !== undefined && impactData?.holiday_delta !== null
+            ? `${impactData.holiday_delta > 0 ? '+' : ''}${impactData.holiday_delta.toFixed(1)}%`
+            : '0.0%'}
           icon={Award}
           accentColor="emerald"
           description="Reduction in commercial commuter volume"
         />
         <MetricCard
           title="Data Provenance"
-          value="Gazette & BCCI"
+          value={impactData?.source || 'Gazette & BCCI'}
           icon={ShieldCheck}
           accentColor="blue"
           description="Verified 2019 / 2026 feeds"
         />
+
       </div>
 
       {/* Comparison Chart */}

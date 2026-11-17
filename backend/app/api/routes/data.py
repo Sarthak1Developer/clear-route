@@ -1,9 +1,10 @@
-from typing import List, Dict, Any
-from fastapi import APIRouter, Depends
+from typing import List, Dict, Any, Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from backend.app.database.session import get_db, SessionLocal
 from backend.app.repositories.data_repository import DataRepository
-from backend.app.schemas.schemas import DataSourceItem, DataQualityResponse, DataCoverageResponse
+from backend.app.schemas.schemas import DataSourceItem, DataQualityResponse, DataCoverageResponse, PaginatedTrafficRecordsResponse
+
 
 router = APIRouter(tags=["Data Governance"])
 
@@ -45,3 +46,27 @@ def get_data_coverage(db: Session = Depends(get_db)):
         db = SessionLocal()
     repo = DataRepository(db)
     return repo.get_data_coverage_stats()
+
+@router.get("/data/records", response_model=PaginatedTrafficRecordsResponse, summary="Query paginated database traffic records")
+def get_data_records(
+    city: Optional[str] = Query(None, description="City filter"),
+    location: Optional[str] = Query(None, description="Location code or corridor filter"),
+    start_date: Optional[str] = Query(None, description="Start date filter YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="End date filter YYYY-MM-DD"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(25, ge=5, le=200, description="Page size"),
+    db: Session = Depends(get_db)
+):
+    """Retrieves paginated genuine traffic observations stored in the database."""
+    if not isinstance(db, Session):
+        db = SessionLocal()
+    repo = DataRepository(db)
+    return repo.get_paginated_traffic_records(
+        city=city,
+        location_code=location,
+        start_date=start_date,
+        end_date=end_date,
+        page=page,
+        page_size=page_size
+    )
+

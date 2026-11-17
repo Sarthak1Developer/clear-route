@@ -67,6 +67,15 @@ export const api = {
     }).then(handleResponse);
   },
 
+  async predictExplain(payload) {
+    return fetch(`${BASE_URL}/predict/explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(handleResponse);
+  },
+
+
   async getPredictionById(predictionId) {
     return fetch(`${BASE_URL}/predictions/${encodeURIComponent(predictionId)}`).then(handleResponse);
   },
@@ -77,9 +86,11 @@ export const api = {
     return fetch(url).then(handleResponse);
   },
 
-  async getEventImpact() {
-    return fetch(`${BASE_URL}/events/impact`).then(handleResponse);
+  async getEventImpact(city = '') {
+    const params = city ? `?city=${encodeURIComponent(city)}` : '';
+    return fetch(`${BASE_URL}/events/impact${params}`).then(handleResponse);
   },
+
 
   // Weather
   async getWeather(city = '') {
@@ -87,9 +98,20 @@ export const api = {
     return fetch(`${BASE_URL}/weather${params}`).then(handleResponse);
   },
 
+  async getWeatherHistory(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        params.append(key, val);
+      }
+    });
+    return fetch(`${BASE_URL}/weather/history?${params.toString()}`).then(handleResponse);
+  },
+
   async getWeatherImpact() {
     return fetch(`${BASE_URL}/weather/impact`).then(handleResponse);
   },
+
 
   // Model Performance & Explainability
   async getModelPerformance() {
@@ -116,6 +138,17 @@ export const api = {
   async getDataCoverage() {
     return fetch(`${BASE_URL}/data/coverage`).then(handleResponse);
   },
+
+  async getDataRecords(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        params.append(key, val);
+      }
+    });
+    return fetch(`${BASE_URL}/data/records?${params.toString()}`).then(handleResponse);
+  },
+
 
   // Reports
   async exportDataset(datasetKey) {

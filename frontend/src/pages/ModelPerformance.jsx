@@ -222,31 +222,35 @@ export const ModelPerformance = () => {
 
       {/* SHAP Explainability Summary */}
       <Card
-        title="SHAP Global Mean Absolute Importance"
-        subtitle="Average magnitude of impact on model output magnitude: mean(|SHAP value|)"
+        title={`SHAP Global Feature Attributions — ${explainabilityData?.model || 'XGBoost Regressor (TreeExplainer)'}`}
+        subtitle={`Average magnitude of impact on model output magnitude: mean(|SHAP value|) · Base Value: ${explainabilityData?.base_value || 24.05}%`}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
-          <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
-            <span className="text-slate-400 uppercase text-[10px] font-bold block mb-1">Top Congestion Driver</span>
-            <p className="text-sm font-bold text-cyan-400 font-mono">hour_of_day (Commuter Rush)</p>
-            <p className="text-slate-400 text-[10px] mt-0.5">Mean SHAP attribution: +14.2%</p>
-          </div>
-          <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
-            <span className="text-slate-400 uppercase text-[10px] font-bold block mb-1">Top Meteorological Driver</span>
-            <p className="text-sm font-bold text-blue-400 font-mono">precipitation_mm (Rainfall)</p>
-            <p className="text-slate-400 text-[10px] mt-0.5">Mean SHAP attribution: +11.8%</p>
-          </div>
-          <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
-            <span className="text-slate-400 uppercase text-[10px] font-bold block mb-1">Top Physical Driver</span>
-            <p className="text-sm font-bold text-emerald-400 font-mono">road_lanes & free_flow_speed</p>
-            <p className="text-slate-400 text-[10px] mt-0.5">Mean dampening attribution: -8.6%</p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 text-xs">
+          {(explainabilityData?.top_drivers || []).slice(0, 4).map((d) => (
+            <div key={d.feature || d.rank} className="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+              <span className="text-slate-400 uppercase text-[10px] font-bold block mb-1">
+                Rank #{d.rank} · {d.category?.replace(/_/g, ' ')}
+              </span>
+              <p className="text-sm font-bold text-cyan-400 font-mono truncate">
+                {d.driver || d.feature}
+              </p>
+              <div className="flex items-center justify-between mt-1 text-[11px]">
+                <span className="text-slate-400">Mean |SHAP|:</span>
+                <span className="font-mono font-bold text-slate-100">{d.mean_shap_pct?.toFixed(2)}%</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-mono mt-0.5">{d.direction}</p>
+            </div>
+          ))}
         </div>
 
-        <p className="text-xs text-slate-400 leading-relaxed">
-          SHAP (SHapley Additive exPlanations) values computed via TreeExplainer demonstrate that hour of day and precipitation are the primary drivers of traffic congestion swings, while road infrastructure (lanes, capacity) provides baseline dampening effects.
-        </p>
+        {explainabilityData?.summary_text && (
+          <div className="p-3 bg-slate-900/40 rounded-lg border border-slate-800 text-xs text-slate-300 leading-relaxed">
+            <strong className="text-cyan-400 font-mono">TreeExplainer Finding: </strong>
+            {explainabilityData.summary_text}
+          </div>
+        )}
       </Card>
+
     </div>
   );
 };

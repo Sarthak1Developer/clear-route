@@ -16,6 +16,7 @@ import {
 export const WeatherImpact = () => {
   const { selectedCity } = useApp();
   const [weatherData, setWeatherData] = useState(null);
+  const [cityWeather, setCityWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -24,9 +25,13 @@ export const WeatherImpact = () => {
     async function loadWeather() {
       try {
         setLoading(true);
-        const res = await api.getWeatherImpact();
+        const [impactRes, cityRes] = await Promise.all([
+          api.getWeatherImpact(),
+          api.getWeather(selectedCity.name).catch(() => null),
+        ]);
         if (isMounted) {
-          setWeatherData(res);
+          setWeatherData(impactRes);
+          setCityWeather(cityRes);
           setError(null);
         }
       } catch (err) {
@@ -38,6 +43,7 @@ export const WeatherImpact = () => {
     loadWeather();
     return () => { isMounted = false; };
   }, [selectedCity]);
+
 
   if (loading) return <LoadingSpinner label="Analyzing meteorological correlation curves (Open-Meteo ERA5)..." />;
   if (error) return <EmptyState title="Weather Analytics Unavailable" message={error} />;
@@ -70,28 +76,95 @@ export const WeatherImpact = () => {
         </div>
       </div>
 
+      {/* Configured Live Weather & Observation Card */}
+      {cityWeather && (
+        <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 shadow-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">
+                  Configured Meteorological Status · {cityWeather.city}
+                </span>
+                <span className="text-slate-600">•</span>
+                <span className="text-[10px] px-2 py-0.5 rounded font-mono border bg-slate-900 border-slate-700 text-slate-300">
+                  {cityWeather.current_context?.is_live ? 'Live Provider Stream' : 'Verified Repository Feed'}
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <span>{cityWeather.current_context?.weather_condition || 'Overcast / Moderate'}</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Provenance: {cityWeather.provenance || 'Open-Meteo ERA5 Reanalysis'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <span className="text-2xl font-extrabold font-mono text-slate-100">
+                  {cityWeather.current_context?.temperature_c !== undefined ? `${cityWeather.current_context.temperature_c.toFixed(1)}°C` : 'N/A'}
+                </span>
+                <p className="text-[11px] text-slate-400">Ambient Temperature</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 text-xs">
+            <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+              <span className="text-slate-400 text-[10px] uppercase font-bold block">Precipitation Rate</span>
+              <p className="font-mono text-cyan-300 font-bold text-sm mt-0.5">
+                {cityWeather.current_context?.precipitation_mm !== undefined ? `${cityWeather.current_context.precipitation_mm.toFixed(1)} mm/hr` : '0.0 mm/hr'}
+              </p>
+            </div>
+            <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+              <span className="text-slate-400 text-[10px] uppercase font-bold block">Relative Humidity</span>
+              <p className="font-mono text-slate-200 font-bold text-sm mt-0.5">
+                {cityWeather.current_context?.humidity_pct !== undefined ? `${cityWeather.current_context.humidity_pct.toFixed(0)}%` : 'N/A'}
+              </p>
+            </div>
+            <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+              <span className="text-slate-400 text-[10px] uppercase font-bold block">Wind Speed</span>
+              <p className="font-mono text-slate-200 font-bold text-sm mt-0.5">
+                {cityWeather.current_context?.wind_speed_kmh !== undefined ? `${cityWeather.current_context.wind_speed_kmh.toFixed(1)} km/h` : 'N/A'}
+              </p>
+            </div>
+            <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+              <span className="text-slate-400 text-[10px] uppercase font-bold block">Provider Connectivity</span>
+              <p className="font-mono text-emerald-400 font-bold text-[11px] mt-0.5">
+                {cityWeather.provider_status?.includes('unavailable') ? 'Database Fallback Active' : 'Live Sync Active'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Key Meteorological Impact Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Monsoon Congestion Surge"
-          value={`+${(weatherData?.heavy_rain_surge || 22.8).toFixed(1)}%`}
+          value={weatherData?.heavy_rain_surge !== undefined && weatherData?.heavy_rain_surge !== null
+            ? `+${weatherData.heavy_rain_surge.toFixed(1)}%`
+            : '0.0%'}
           icon={CloudRain}
           accentColor="rose"
           description="Precipitation > 15 mm/hr"
         />
         <MetricCard
           title="Rainfall Correlation (r)"
-          value={`+${(weatherData?.rain_correlation || 0.44).toFixed(2)}`}
+          value={weatherData?.rain_correlation !== undefined && weatherData?.rain_correlation !== null
+            ? `${weatherData.rain_correlation > 0 ? '+' : ''}${weatherData.rain_correlation.toFixed(2)}`
+            : '0.00'}
           icon={Droplets}
           accentColor="cyan"
-          description="Moderate positive correlation"
+          description="Empirical Pearson correlation"
         />
         <MetricCard
           title="Temperature Sensitivity"
-          value={`-${(weatherData?.temp_correlation || 0.12).toFixed(2)}`}
+          value={weatherData?.temp_correlation !== undefined && weatherData?.temp_correlation !== null
+            ? `${weatherData.temp_correlation.toFixed(2)}`
+            : '0.00'}
           icon={Thermometer}
           accentColor="amber"
-          description="Slight negative correlation"
+          description="Ambient temperature sensitivity"
         />
         <MetricCard
           title="ERA5 Data Coverage"
@@ -102,6 +175,7 @@ export const WeatherImpact = () => {
           description="Hourly timestamp aligned"
         />
       </div>
+
 
       {/* Primary Weather Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

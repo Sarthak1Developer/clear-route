@@ -646,3 +646,66 @@ class DataRepository:
         self.db.commit()
         self.db.refresh(prediction)
         return prediction
+
+    def get_paginated_traffic_records(
+        self,
+        city: Optional[str] = None,
+        location_code: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 25
+    ) -> Dict[str, Any]:
+        """Returns paginated database traffic records with optional city, corridor and date filtering."""
+        query = self.db.query(TrafficRecord).join(Location, Location.id == TrafficRecord.location_id).join(City, City.id == Location.city_id)
+        if city and city.strip() and city.lower() != "all":
+            query = query.filter(func.lower(City.city_name) == city.strip().lower())
+        if location_code and location_code.strip() and location_code.lower() != "all":
+            query = query.filter(
+                (Location.location_code == location_code.strip()) |
+                (func.lower(Location.location_name).ilike(f"%{location_code.strip().lower()}%"))
+            )
+        if start_date:
+            try:
+                s_dt = datetime.datetime.fromisoformat(start_date)
+                query = query.filter(TrafficRecord.timestamp >= s_dt)
+            except Exception:
+                pass
+        if end_date:
+            try:
+                e_dt = datetime.datetime.fromisoformat(end_date)
+                query = query.filter(TrafficRecord.timestamp <= e_dt)
+            except Exception:
+                pass
+
+        total = query.count()
+        offset = max(0, (page - 1) * page_size)
+        rows = query.order_by(desc(TrafficRecord.timestamp)).offset(offset).limit(page_size).all()
+
+        records = [
+            {
+                "id": r.id,
+                "city": r.location.city.city_name if r.location and r.location.city else "",
+                "location_code": r.location.location_code if r.location else "",
+                "location_name": r.location.location_name if r.location else "",
+                "corridor_name": r.location.corridor_name if r.location else "",
+                "road_type": r.location.road_type if r.location else "",
+                "timestamp": r.timestamp.isoformat(),
+                "hour": r.hour,
+                "day_of_week": r.day_of_week,
+                "observed_speed_kmh": round(float(r.observed_speed_kmh), 1),
+                "free_flow_speed_kmh": round(float(r.free_flow_speed_kmh), 1),
+                "congestion_percentage": round(float(r.congestion_percentage), 1),
+                "congestion_category": r.congestion_category,
+                "is_peak": r.is_peak_hour,
+            }
+            for r in rows
+        ]
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        return {
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "records": records
+        }

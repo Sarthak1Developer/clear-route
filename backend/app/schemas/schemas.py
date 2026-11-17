@@ -1,5 +1,5 @@
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Union
+from pydantic import BaseModel, Field, field_validator
 
 # Health
 class HealthResponse(BaseModel):
@@ -104,15 +104,48 @@ class LocationTrendsResponse(BaseModel):
 class PredictionRequest(BaseModel):
     city: str
     location_id: str
-    prediction_date: str = Field(..., description="Date string YYYY-MM-DD")
-    prediction_time: str = Field(..., description="Time string HH:MM")
-    model_type: str = Field("xgboost", description="historical_mean, linear_regression, random_forest, or xgboost")
-    temperature_c: float = 28.0
-    precipitation_mm: float = 0.0
-    humidity_pct: float = 65.0
-    wind_speed_kmh: float = 12.0
-    event_present: bool = False
+    prediction_date: Optional[str] = Field(None, description="Date string YYYY-MM-DD")
+    prediction_time: Optional[str] = Field(None, description="Time string HH:MM")
+    hour: Optional[int] = Field(None, ge=0, le=23, description="Hour of day (0-23)")
+    day_of_week: Optional[int] = Field(None, ge=0, le=6, description="Day of week (0=Monday, 6=Sunday)")
+    month: Optional[int] = Field(None, ge=1, le=12, description="Month of year (1-12)")
+    model_type: Optional[str] = Field("xgboost", description="historical_mean, linear_regression, random_forest, or xgboost")
+    temperature_c: Optional[float] = Field(28.0, description="Temperature in Celsius")
+    temperature_2m_c: Optional[float] = Field(None, description="Temperature in Celsius (ML Contract alias)")
+    precipitation_mm: Optional[float] = Field(0.0, ge=0.0, description="Precipitation in mm (>= 0.0)")
+    humidity_pct: Optional[float] = Field(65.0, ge=0.0, le=100.0, description="Relative humidity %")
+    relative_humidity_2m_pct: Optional[float] = Field(None, ge=0.0, le=100.0, description="Relative humidity % (ML Contract alias)")
+    wind_speed_kmh: Optional[float] = Field(12.0, ge=0.0, description="Wind speed in km/h")
+    wind_speed_10m_kmh: Optional[float] = Field(None, ge=0.0, description="Wind speed in km/h (ML Contract alias)")
+    road_lanes: Optional[int] = Field(None, ge=1, description="Number of carriageway lanes (>= 1)")
+    road_type: Optional[str] = Field(None, description="Road class: primary, secondary, trunk")
+    length_m: Optional[float] = Field(None, ge=0.0, description="Corridor length in meters")
+    free_flow_speed_kmh: Optional[float] = Field(None, ge=0.0, description="Free flow speed in km/h")
+    accident_risk_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Accident hazard score [0, 1]")
+    event_present: Optional[Union[bool, int]] = Field(False, description="Event present flag (bool or 0/1)")
     event_name: Optional[str] = None
+    event_type: Optional[str] = Field(None, description="None, Festival, Public Holiday, Sports, Assembly")
+    event_intensity: Optional[float] = Field(None, ge=0.0, le=1.0, description="Severity weight of event [0, 1]")
+    lag_speed_1h: Optional[float] = Field(None, ge=0.0, description="Observed speed at t-1 in km/h")
+    rolling_speed_3h: Optional[float] = Field(None, ge=0.0, description="Mean speed over prior 3 hours in km/h")
+
+    @field_validator("city")
+    @classmethod
+    def validate_city(cls, v: str) -> str:
+        valid_cities = {"Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Kolkata"}
+        if v not in valid_cities:
+            raise ValueError(f"City '{v}' is invalid. Allowed metropolitan areas: {sorted(valid_cities)}")
+        return v
+
+    @field_validator("road_type")
+    @classmethod
+    def validate_road_type(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            valid_types = {"primary", "secondary", "trunk"}
+            if v.lower() not in valid_types:
+                raise ValueError(f"Road type '{v}' is invalid. Allowed types: {sorted(valid_types)}")
+            return v.lower()
+        return v
 
 class ShapAttributionItem(BaseModel):
     feature: str
@@ -123,19 +156,74 @@ class ConfidenceInterval(BaseModel):
     lower: float
     upper: float
 
+class LocationInfo(BaseModel):
+    location_id: str
+    city: str
+    location_name: Optional[str] = None
+    corridor_name: Optional[str] = None
+    road_type: Optional[str] = None
+    road_lanes: Optional[int] = None
+    length_m: Optional[float] = None
+    free_flow_speed_kmh: Optional[float] = None
+    accident_risk_score: Optional[float] = None
+
+class AdditiveCheck(BaseModel):
+    base_value: float
+    sum_attributions: float
+    reconstructed_prediction: float
+    is_consistent: bool
+
+class FeatureContributionItem(BaseModel):
+    feature: str
+    display_name: str
+    category: str
+    feature_value: Any
+    attribution_value: float
+    direction: str
+    percentage_contribution: float
+
 class PredictionResponse(BaseModel):
     prediction_id: str
+    status: str = "success"
+    timestamp: str
     city: str
     location_id: str
+    location_name: Optional[str] = None
+    corridor_name: Optional[str] = None
+    location_info: Optional[LocationInfo] = None
     prediction_date: str
     prediction_time: str
     predicted_congestion_pct: float
     congestion_category: str
+    model_name: str
+    model_version: str = "1.0.0"
+    selected_model: str
     historical_baseline_pct: float
     difference_pct: float
-    selected_model: str
     confidence_interval: Optional[ConfidenceInterval] = None
-    shap_attributions: List[ShapAttributionItem]
+    input_features: Optional[Dict[str, Any]] = None
+    base_value: Optional[float] = None
+    additive_check: Optional[AdditiveCheck] = None
+    category_impacts: Optional[Dict[str, float]] = None
+    feature_contributions: Optional[List[FeatureContributionItem]] = None
+    explanation_summary: Optional[str] = None
+    limitations_and_caveats: Optional[List[str]] = None
+    shap_attributions: List[ShapAttributionItem] = Field(default_factory=list)
+
+class PredictionExplanationResponse(BaseModel):
+    prediction_id: str
+    model_id: str
+    model_name: str
+    model_version: str = "1.0.0"
+    predicted_congestion: float
+    congestion_category: Optional[str] = None
+    base_value: float
+    additive_check: AdditiveCheck
+    category_impacts: Dict[str, float]
+    feature_contributions: List[FeatureContributionItem]
+    feature_values: Optional[Dict[str, Any]] = None
+    explanation_summary: str
+    limitations_and_caveats: List[str]
 
 # Events
 class EventItem(BaseModel):
@@ -238,16 +326,37 @@ class ModelPerformanceResponse(BaseModel):
 
 class FeatureImportanceItem(BaseModel):
     name: str
+    feature: Optional[str] = None
+    display_name: Optional[str] = None
     importance: float
+    mean_abs_shap_pct: Optional[float] = None
+    category: Optional[str] = None
+    rank: Optional[int] = None
     description: str
 
 class FeatureImportanceResponse(BaseModel):
     model: str
+    model_version: str = "1.0.0"
+    base_value: Optional[float] = None
     features: List[FeatureImportanceItem]
+    total_features_evaluated: Optional[int] = None
+
+class TopDriverItem(BaseModel):
+    driver: str
+    feature: Optional[str] = None
+    mean_shap_pct: float
+    direction: str
+    category: Optional[str] = None
+    rank: Optional[int] = None
 
 class ShapSummaryResponse(BaseModel):
-    top_drivers: List[Dict[str, Any]]
+    model: str = "XGBoost Regressor (TreeExplainer)"
+    model_version: str = "1.0.0"
+    base_value: float = 24.05
+    top_drivers: List[TopDriverItem]
+    category_drivers: Optional[Dict[str, str]] = None
     summary_text: str
+    limitations_and_caveats: Optional[List[str]] = None
 
 # Data Quality & Sources
 class DataSourceItem(BaseModel):
@@ -273,3 +382,27 @@ class DataCoverageResponse(BaseModel):
     start_date: str
     end_date: str
     corridors_total: int
+
+class TrafficRecordExplorerItem(BaseModel):
+    id: int
+    city: str
+    location_code: str
+    location_name: str
+    corridor_name: str
+    road_type: str
+    timestamp: str
+    hour: int
+    day_of_week: int
+    observed_speed_kmh: float
+    free_flow_speed_kmh: float
+    congestion_percentage: float
+    congestion_category: str
+    is_peak: bool
+
+class PaginatedTrafficRecordsResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    records: List[TrafficRecordExplorerItem]
+
