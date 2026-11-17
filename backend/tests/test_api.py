@@ -282,7 +282,7 @@ def test_models_endpoints():
     assert len(p_data["models"]) == 4
     assert p_data["best_model"]["key"] in ["historical_mean", "xgboost"]
     assert p_data["best_model"]["key"] == "historical_mean"  # Validated against metrics.json held-out benchmarks
-    assert len(p_data["actual_vs_predicted"]) == 10
+    assert p_data["actual_vs_predicted"] == []  # No persisted test-row export: never fabricate chart points
 
     # Feature Importance from SHAP summary
     res_feat = client.get("/api/models/feature-importance")
