@@ -1,3 +1,5 @@
+> AUDIT CORRECTION (17 November 2026): Current traffic is generated benchmark demonstration data, not verified Uber Movement sensor observations. Metrics describe this benchmark only. Real-world forecasting, causal weather/event effects, and production readiness are unverified. See docs/audit/FINAL_AUDIT.md for executed checks and blockers. Earlier claims below are historical documentation, not current verification.
+
 # ClearRoute — Project Implementation Status
 
 **Project:** ClearRoute (Smart Transportation & Predictive Traffic Analytics Platform)  

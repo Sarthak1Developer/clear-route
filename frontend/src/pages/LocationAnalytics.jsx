@@ -124,7 +124,7 @@ export const LocationAnalytics = () => {
               const loc = locations.find((l) => (l.location_code || l.id) == e.target.value);
               if (loc) setSelectedLocation(loc);
             }}
-            className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500 max-w-xs truncate"
+            className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500 min-w-0 flex-1 w-full max-w-xs truncate"
           >
             {filteredLocations.map((loc) => (
               <option key={loc.id || loc.location_code} value={loc.location_code || loc.id}>

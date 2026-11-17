@@ -217,8 +217,8 @@ class PredictionExplanationResponse(BaseModel):
     model_version: str = "1.0.0"
     predicted_congestion: float
     congestion_category: Optional[str] = None
-    base_value: float
-    additive_check: AdditiveCheck
+    base_value: Optional[float] = None
+    additive_check: Optional[AdditiveCheck] = None
     category_impacts: Dict[str, float]
     feature_contributions: List[FeatureContributionItem]
     feature_values: Optional[Dict[str, Any]] = None
@@ -320,6 +320,7 @@ class ModelItem(BaseModel):
     is_primary: bool
 
 class ModelPerformanceResponse(BaseModel):
+    evaluation_context: str = "Generated demonstration traffic; metrics are not validated real-world forecast accuracy."
     models: List[ModelItem]
     best_model: ModelItem
     actual_vs_predicted: List[Dict[str, Any]]

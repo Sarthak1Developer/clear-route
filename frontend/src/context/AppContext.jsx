@@ -99,7 +99,7 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     checkHealth();
-    const intervalSec = Number(settings.refreshInterval) || 30;
+    const intervalSec = Number.isFinite(Number(settings.refreshInterval)) ? Number(settings.refreshInterval) : 30;
     if (intervalSec <= 0) return;
     const interval = setInterval(checkHealth, intervalSec * 1000);
     return () => clearInterval(interval);

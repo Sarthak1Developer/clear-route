@@ -1,6 +1,7 @@
 import datetime
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from sqlalchemy import func, desc
 from backend.app.repositories.data_repository import DataRepository
 from backend.app.models.entities import City, Location, TrafficRecord, WeatherRecord, Event
@@ -31,7 +32,7 @@ class AnalyticsService:
 
         total_corridors = 0
         sum_c = 0.0
-        congested_city = "Bengaluru"
+        congested_city = "No historical records"
         max_c = -1.0
 
         for c in cities:
@@ -64,7 +65,7 @@ class AnalyticsService:
         if min_ts and max_ts:
             coverage_str = f"{min_ts.strftime('%B %d, %Y')} – {max_ts.strftime('%B %d, %Y')}"
         else:
-            coverage_str = "April 1, 2019 – December 31, 2019"
+            coverage_str = "No historical records"
 
         # Diurnal 24-hr distribution from database
         hourly_trend = self.repo.get_hourly_trend_data()
@@ -229,7 +230,7 @@ class AnalyticsService:
         monthly = self.repo.get_monthly_trend_data(location_id=loc.id)
 
         # Rain delta
-        rain_stats = self.repo.get_weather_impact_data(city_id=loc.city_id)
+        rain_stats = self.repo.get_weather_impact_data(location_id=loc.id)
         rain_delta = rain_stats.get("heavy_rain_surge", 0.0)
 
         return {
@@ -258,11 +259,15 @@ class AnalyticsService:
         loc_id = None
         if location_id:
             loc = self.repo.get_location_by_code(location_id)
+            if not loc:
+                raise HTTPException(status_code=404, detail="Unknown corridor")
             if loc:
                 loc_id = loc.id
                 city_id = loc.city_id
         elif city_name:
             c = self.repo.get_city_by_name(city_name)
+            if not c:
+                raise HTTPException(status_code=404, detail="Unknown city")
             if c:
                 city_id = c.id
         res = self.repo.get_event_impact_metrics(
@@ -286,11 +291,15 @@ class AnalyticsService:
         loc_id = None
         if location_id:
             loc = self.repo.get_location_by_code(location_id)
+            if not loc:
+                raise HTTPException(status_code=404, detail="Unknown corridor")
             if loc:
                 loc_id = loc.id
                 city_id = loc.city_id
         elif city_name:
             c = self.repo.get_city_by_name(city_name)
+            if not c:
+                raise HTTPException(status_code=404, detail="Unknown city")
             if c:
                 city_id = c.id
         res = self.repo.get_weather_impact_data(

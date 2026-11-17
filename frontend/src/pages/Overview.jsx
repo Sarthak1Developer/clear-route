@@ -77,7 +77,7 @@ export const Overview = () => {
             Indian Metropolitan Congestion Intelligence
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Multi-factor predictive analytics combining historical Uber Movement corridor speeds, Open-Meteo ERA5 weather reanalysis, official MoRTH accident contexts, and cultural event dynamics.
+            Explore generated traffic benchmarks alongside weather and event context. Observational validity and causal effects have not been established.
           </p>
         </div>
         <button
@@ -105,7 +105,7 @@ export const Overview = () => {
           unit="Corridors"
           icon={MapPin}
           accentColor="blue"
-          description="Zenodo Uber Movement TAZ Segments"
+          description="Configured demonstration corridors"
         />
         <MetricCard
           title="Network Avg Congestion"
@@ -249,7 +249,7 @@ export const Overview = () => {
         {/* Monthly Trend 2019 */}
         <Card
           title="2019 Monthly Progression"
-          subtitle="April – December 2019 seasonal progression (Monsoon surge)"
+          subtitle="Monthly averages from the application database"
         >
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -382,7 +382,7 @@ export const Overview = () => {
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Gold Records</span>
                   <p className="text-cyan-400 font-mono font-bold mt-0.5">
-                    {quality?.total_gold_records?.toLocaleString() || '184,500'}
+                    {quality?.total_gold_records?.toLocaleString() ?? 'Unavailable'}
                   </p>
                 </div>
               </div>
@@ -391,7 +391,7 @@ export const Overview = () => {
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Completeness Rate</span>
                   <p className="text-emerald-400 font-mono font-bold mt-0.5">
-                    {(quality?.completeness_rate || 99.4).toFixed(1)}% verified
+                    {(quality?.completeness_rate ?? 0).toFixed(1)}% verified
                   </p>
                 </div>
                 <div className="text-right">
@@ -412,7 +412,7 @@ export const Overview = () => {
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Corridors</span>
                   <p className="text-blue-400 font-mono font-bold mt-0.5">
-                    {coverage?.corridors_total || 25} segments
+                    {coverage?.corridors_total ?? 0} segments
                   </p>
                 </div>
               </div>

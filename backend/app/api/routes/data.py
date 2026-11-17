@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from backend.app.models.entities import TrafficRecord, WeatherRecord, Location, Event
 from backend.app.database.session import get_db, SessionLocal
 from backend.app.repositories.data_repository import DataRepository
 from backend.app.schemas.schemas import DataSourceItem, DataQualityResponse, DataCoverageResponse, PaginatedTrafficRecordsResponse
@@ -20,14 +21,14 @@ def get_data_sources(db: Session = Depends(get_db)) -> Dict[str, Any]:
     for s in sources:
         items.append({
             "id": s.id,
-            "source_name": s.source_name,
+            "source_name": "Generated traffic benchmark (legacy catalog claimed Uber Movement)" if s.category.lower() == "traffic" else s.source_name,
             "category": s.category,
-            "provenance_url": s.provenance_url,
+            "provenance_url": None if s.category.lower() == "traffic" else s.provenance_url,
             "temporal_coverage": s.temporal_coverage,
             "spatial_coverage": s.spatial_coverage,
-            "record_count": s.record_count,
-            "license": s.license,
-            "quality_status": s.quality_status,
+            "record_count": db.query({"Traffic": TrafficRecord, "Weather": WeatherRecord, "Infrastructure": Location}.get(s.category, Event)).count() if s.category in {"Traffic", "Weather", "Infrastructure"} or "holiday" in s.source_name.lower() else None,
+            "license": "Demonstration dataset; external traffic license not verified" if s.category.lower() == "traffic" else s.license,
+            "quality_status": "Generated demonstration data; not verified observations" if s.category.lower() == "traffic" else "Source attribution recorded; independent provenance not verified",
         })
     return {"sources": items}
 

@@ -8,7 +8,8 @@ const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 async function handleResponse(response) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData.detail || errorData.message || `HTTP Error ${response.status}: ${response.statusText}`;
+    const detail = Array.isArray(errorData.detail) ? errorData.detail.map(item => `${item.loc?.join('.')}: ${item.msg}`).join('; ') : errorData.detail;
+    const message = detail || errorData.message || `HTTP Error ${response.status}: ${response.statusText}`;
     throw new Error(message);
   }
   return response.json();
@@ -116,8 +117,8 @@ export const api = {
     return fetch(`${BASE_URL}/weather/history?${params.toString()}`).then(handleResponse);
   },
 
-  async getWeatherImpact() {
-    return fetch(`${BASE_URL}/weather/impact`).then(handleResponse);
+  async getWeatherImpact(city = '') {
+    return fetch(`${BASE_URL}/weather/impact?${new URLSearchParams(city ? { city } : {})}`).then(handleResponse);
   },
 
 

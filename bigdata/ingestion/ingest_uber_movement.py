@@ -119,9 +119,12 @@ def ingest_uber_movement(
     output_dir: str = "data/bronze/uber_movement",
     start_date_str: str = "2019-04-01",
     end_date_str: str = "2019-12-31",
-    seed: int = 42
+    seed: int = 42,
+    allow_demonstration: bool = False
 ) -> str:
     """Ingests continuous hourly traffic observations into the Bronze layer."""
+    if not allow_demonstration:
+        raise RuntimeError("Genuine corridor traffic observations are required. This legacy generator produces demonstration data only; use allow_demonstration=True explicitly for a labeled demo.")
     os.makedirs(output_dir, exist_ok=True)
     bronze_csv = os.path.join(output_dir, "raw_uber_movement_traffic.csv")
     meta_json = os.path.join(output_dir, "provenance_metadata.json")

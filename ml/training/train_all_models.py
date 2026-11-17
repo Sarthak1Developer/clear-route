@@ -360,12 +360,16 @@ def train_and_validate_all_models(
     # =========================================================================
     # Genuine Model Selection (Highest R2 and lowest MAE on unobserved test split)
     # =========================================================================
-    # Candidate ranking: sorts by R2 desc, then MAE asc
-    ranked_models = sorted(
-        eval_summaries.keys(),
-        key=lambda k: (eval_summaries[k]["r2"], -eval_summaries[k]["mae"]),
-        reverse=True
-    )
+    validation_predictions = {
+        "historical_mean": m1.predict(val_df),
+        "linear_regression": m2.predict(X_val),
+        "random_forest": m3.predict(X_val),
+        "xgboost": m4.predict(X_val),
+    }
+    validation_scores = {key: ModelEvaluator.evaluate(y_val, pred)
+                         for key, pred in validation_predictions.items()}
+    ranked_models = sorted(validation_scores,
+        key=lambda key: (validation_scores[key]["r2"], -validation_scores[key]["mae"]), reverse=True)
     best_model_key = ranked_models[0]
     eval_summaries[best_model_key]["is_primary"] = True
     logger.info(f"CHAMPION MODEL SELECTED: {eval_summaries[best_model_key]['name']} (R2={eval_summaries[best_model_key]['r2']}, MAE={eval_summaries[best_model_key]['mae']}%)")
@@ -417,6 +421,7 @@ def train_and_validate_all_models(
         "evaluation_partition": "Held-Out Chronological Test Set (15%)",
         "total_test_samples": len(test_df),
         "best_model": best_model_key,
+        "selection_partition": "Chronological validation set; test used only for final metrics",
         "models": eval_summaries
     }
     with open(metrics_path, "w") as f:

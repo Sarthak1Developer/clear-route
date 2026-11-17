@@ -15,14 +15,14 @@ def health_check(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
     except Exception as e:
-        db_status = f"unhealthy ({str(e)})"
+        db_status = "unhealthy"
 
     loaded = inference_service.get_loaded_models()
 
     return {
-        "status": "online",
+        "status": "online" if db_status == "connected" and len(loaded) == 4 else "degraded",
         "version": "1.0.0",
         "database": db_status,
         "models_loaded": loaded,
-        "timestamp": datetime.datetime.now().isoformat(),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }

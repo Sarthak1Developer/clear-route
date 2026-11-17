@@ -126,10 +126,7 @@ def ingest_weather_era5(
             city_frames.append(df_c)
             time.sleep(0.5)  # Respect API rate limits
         except Exception as e:
-            logger.warning(f"Failed to fetch live ERA5 weather for {city}: {e}. Activating fallback.")
-            is_genuine = False
-            df_fallback = generate_fallback_weather(city, coords["lat"], coords["lon"], start_date, end_date)
-            city_frames.append(df_fallback)
+            raise RuntimeError(f"Weather ingestion failed for {city}; existing files were preserved. No simulated replacement was generated.") from e
 
     df_weather = pd.concat(city_frames, ignore_index=False).reset_index(drop=True)
     df_weather.to_csv(bronze_csv, index=False)

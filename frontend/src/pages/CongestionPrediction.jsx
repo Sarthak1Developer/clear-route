@@ -500,9 +500,10 @@ export const CongestionPrediction = () => {
 
               {/* SHAP Feature Attribution Chart */}
               <Card
-                title="SHAP Feature Attributions (Local Explainability)"
+                title="Model Feature Contributions (Local Explainability)"
                 subtitle="Quantifies how each input feature shifts the predicted congestion above (+) or below (-) the baseline"
               >
+                <p className="mb-3 text-xs text-slate-400">{predictionResult.explanation_summary}</p>
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart

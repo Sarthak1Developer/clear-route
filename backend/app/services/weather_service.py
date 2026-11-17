@@ -4,6 +4,7 @@ import logging
 import urllib.request
 import urllib.error
 import datetime
+from fastapi import HTTPException
 from typing import Optional, Dict, Any, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
@@ -111,23 +112,25 @@ class WeatherService:
 
         if location_id:
             loc = repo.get_location_by_code(location_id)
-            if not loc or not loc.city:
-                raise ValueError(f"Unknown corridor '{location_id}'.")
-            target_location = loc
-            target_city = loc.city.city_name
+            if not loc:
+                raise HTTPException(status_code=404, detail="Unknown corridor")
+            if loc:
+                target_location = loc
+                if loc.city:
+                    target_city = loc.city.city_name
         elif city_name:
             city_obj = repo.get_city_by_name(city_name)
-            if not city_obj:
-                supported = ", ".join(sorted(CITY_COORDINATES))
-                raise ValueError(f"Unsupported city '{city_name}'. Supported cities: {supported}.")
-            target_city = city_obj.city_name
+            if city_obj:
+                target_city = city_obj.city_name
+            else:
+                target_city = city_name
 
-        city_obj = repo.get_city_by_name(target_city)
-        if not city_obj:
-            raise ValueError(f"City '{target_city}' is not available in the database.")
         coords = CITY_COORDINATES.get(target_city)
         if coords is None:
-            raise ValueError(f"No weather coordinates configured for '{target_city}'.")
+            raise HTTPException(status_code=404, detail="No coordinates for requested city")
+        city_obj = repo.get_city_by_name(target_city)
+        if not city_obj:
+            raise HTTPException(status_code=404, detail="Unknown city")
         city_id = city_obj.id
 
         # 2. If historical date is explicitly requested, query DB directly
@@ -160,14 +163,16 @@ class WeatherService:
                     "forecast_scenario": {
                         "available": False,
                         "precipitation_mm": 0.0,
-                        "expected_surge_pct": 0.0,
+                        "expected_surge_pct": None,
                         "summary": f"Historical record query for {date_str}; forecast not applicable"
                     }
                 }
 
+            raise HTTPException(status_code=404, detail="No weather observations for the requested date")
+
         # 3. Attempt external live weather fetch
         live_data = self._fetch_external_live_weather(coords[0], coords[1])
-        if live_data and "current" in live_data:
+        if live_data and isinstance(live_data.get("current"), dict) and all(live_data["current"].get(key) is not None for key in ("temperature_2m", "precipitation", "relative_humidity_2m", "wind_speed_10m", "weather_code", "time")):
             current = live_data["current"]
             temp = float(current.get("temperature_2m", 28.0))
             precip = float(current.get("precipitation", 0.0))
@@ -181,7 +186,8 @@ class WeatherService:
             hourly = live_data.get("hourly", {})
             hourly_precip = hourly.get("precipitation", [])
             max_next_rain = max(hourly_precip[:24]) if hourly_precip else precip
-            expected_surge = round(max_next_rain * 1.45, 1) if max_next_rain > 0 else 0.0
+            # A weather forecast alone cannot establish a congestion effect.
+            expected_surge = None
 
             return {
                 "city": target_city,
@@ -205,7 +211,7 @@ class WeatherService:
                     "available": True,
                     "precipitation_mm": max_next_rain,
                     "expected_surge_pct": expected_surge,
-                    "summary": f"Live 24h peak rain forecast: {max_next_rain} mm (projected surge {expected_surge:+}%)."
+                    "summary": f"Provider daily peak rainfall: {max_next_rain} mm. Congestion effect not evaluated."
                 }
             }
 
@@ -239,37 +245,12 @@ class WeatherService:
                 "forecast_scenario": {
                     "available": False,
                     "precipitation_mm": 0.0,
-                    "expected_surge_pct": 0.0,
+                    "expected_surge_pct": None,
                     "summary": "External live forecast unavailable without active provider connection; relying on verified historical baseline"
                 }
             }
 
-        # 5. Empty Dataset boundary fallback
-        return {
-            "city": target_city,
-            "location_id": location_id,
-            "provenance": "Database Records (Empty)",
-            "provider_available": False,
-            "provider_status": "No historical weather records found in database for selected city",
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-            "source": "None",
-            "current_context": {
-                "temperature_c": 28.0,
-                "precipitation_mm": 0.0,
-                "humidity_pct": 60.0,
-                "wind_speed_kmh": 10.0,
-                "weather_condition": "Unknown",
-                "timestamp": None,
-                "is_live": False,
-                "source": "Unverified default"
-            },
-            "forecast_scenario": {
-                "available": False,
-                "precipitation_mm": 0.0,
-                "expected_surge_pct": 0.0,
-                "summary": "Weather observations unavailable"
-            }
-        }
+        raise HTTPException(status_code=404, detail="No weather observations available; provider is unavailable")
 
     def get_weather_history(
         self,
