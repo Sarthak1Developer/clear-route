@@ -37,6 +37,8 @@ export const CongestionPrediction = () => {
   const [predicting, setPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState(null);
   const [predictionError, setPredictionError] = useState(null);
+  const [comparisonResult, setComparisonResult] = useState(null);
+  const [comparingModels, setComparingModels] = useState(false);
 
   // Fetch locations when city changes
   useEffect(() => {
@@ -96,6 +98,40 @@ export const CongestionPrediction = () => {
       showToast(err.message, 'error');
     } finally {
       setPredicting(false);
+    }
+  };
+
+
+  const handleCompareModels = async () => {
+    if (!selectedLocationId) {
+      showToast('Please select a corridor for comparison', 'error');
+      return;
+    }
+    try {
+      setComparingModels(true);
+      setComparisonResult(null);
+      setPredictionError(null);
+      const payload = {
+        city: selectedCity.name,
+        location_id: selectedLocationId,
+        prediction_date: predictionDate,
+        prediction_time: `${String(predictionHour).padStart(2, '0')}:00`,
+        model_type: modelType,
+        temperature_c: Number(temperature),
+        precipitation_mm: Number(precipitation),
+        humidity_pct: Number(humidity),
+        wind_speed_kmh: Number(windSpeed),
+        event_present: Boolean(eventPresent),
+        event_name: eventPresent ? eventName : '',
+      };
+      const result = await api.compareCongestionModels(payload);
+      setComparisonResult(result);
+      showToast(`Model comparison completed: ${result.models_succeeded}/${result.models_requested} models succeeded`, result.models_succeeded === result.models_requested ? 'success' : 'error');
+    } catch (err) {
+      setPredictionError(err.message);
+      showToast(err.message, 'error');
+    } finally {
+      setComparingModels(false);
     }
   };
 
@@ -345,11 +381,32 @@ export const CongestionPrediction = () => {
                 </>
               )}
             </button>
+            <button type="button" onClick={handleCompareModels} disabled={predicting || comparingModels || !selectedLocationId}
+              className="w-full border border-cyan-700 text-cyan-300 hover:bg-cyan-950/40 font-semibold py-2.5 px-4 rounded-xl text-xs disabled:opacity-50">
+              {comparingModels ? 'Comparing all available models...' : 'Compare All 4 Models'}
+            </button>
           </form>
         </div>
 
         {/* Prediction Results & SHAP Explanations (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
+          {comparisonResult && (
+            <div className="bg-[#111827] border border-slate-800 rounded-xl p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h3 className="text-sm font-bold text-white">Four-Model Scenario Comparison</h3>
+                <span className="text-xs text-slate-400">{comparisonResult.models_succeeded}/{comparisonResult.models_requested} models returned predictions</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-3">Best model by stored held-out evaluation: <strong className="text-cyan-300">{comparisonResult.best_model_by_held_out_metrics || 'Not established'}</strong>. This benchmark ranking does not guarantee the best result for an individual scenario.</p>
+              <div className="space-y-2">
+                {comparisonResult.results.map((item) => (
+                  <div key={item.model} className="flex items-center justify-between gap-3 border-b border-slate-800 py-2 last:border-0">
+                    <span className="text-xs text-slate-300 font-mono">{item.model}</span>
+                    {item.status === 'success' ? <span className="text-sm font-bold text-cyan-300">{Number(item.result.predicted_congestion_pct).toFixed(1)}%</span> : <span className="text-xs text-rose-400">{item.status}: {item.error || 'Unavailable'}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {predicting ? (
             <div className="h-full flex items-center justify-center bg-[#111827] border border-slate-800 rounded-xl p-12">
               <LoadingSpinner label="Running tree-based inference and computing SHAP TreeExplainer local values..." />
@@ -422,7 +479,7 @@ export const CongestionPrediction = () => {
                         predictionResult.difference_pct >= 0 ? 'text-rose-400' : 'text-emerald-400'
                       }`}
                     >
-                      {predictionResult.difference_pct == null ? 'N/A' : `${predictionResult.difference_pct >= 0 ? '+' : ''}${predictionResult.difference_pct.toFixed(1)}%`}
+                      {Number.isFinite(predictionResult.difference_pct) ? (predictionResult.difference_pct >= 0 ? `+${predictionResult.difference_pct.toFixed(1)}%` : `${predictionResult.difference_pct.toFixed(1)}%`) : 'N/A'}
                     </p>
                   </div>
                 </div>

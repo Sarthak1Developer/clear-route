@@ -87,6 +87,9 @@ export const LocationAnalytics = () => {
     return () => { isMounted = false; };
   }, [selectedLocation]);
 
+  const weeklyChartData = (trends?.weekly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? row.avg_congestion ?? null }));
+  const monthlyChartData = (trends?.monthly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? row.avg_congestion ?? null }));
+
   const filteredLocations = locations.filter((l) =>
     l.location_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     l.corridor_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -182,7 +185,7 @@ export const LocationAnalytics = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                   title="Historical Congestion"
-                  value={trends.avg_congestion !== undefined && trends.avg_congestion !== null ? `${trends.avg_congestion.toFixed(1)}%` : '0.0%'}
+                  value={Number.isFinite(trends.avg_congestion) ? `${trends.avg_congestion.toFixed(1)}%` : 'N/A'}
                   icon={Compass}
                   accentColor="cyan"
                   description="Apr - Dec 2019 Mean"
@@ -197,14 +200,14 @@ export const LocationAnalytics = () => {
                 />
                 <MetricCard
                   title="Weekday vs Weekend Delta"
-                  value={trends.weekend_delta !== undefined && trends.weekend_delta !== null ? `${trends.weekend_delta > 0 ? '+' : ''}${trends.weekend_delta}%` : '0.0%'}
+                  value={Number.isFinite(trends.weekend_delta) ? `${trends.weekend_delta > 0 ? '+' : ''}${trends.weekend_delta}%` : 'N/A'}
                   icon={Calendar}
                   accentColor="blue"
                   description="Weekday congestion premium"
                 />
                 <MetricCard
                   title="Precipitation Sensitivity"
-                  value={trends.rain_delta !== undefined && trends.rain_delta !== null ? `+${trends.rain_delta}%` : '0.0%'}
+                  value={Number.isFinite(trends.rain_delta) ? `+${trends.rain_delta}%` : 'N/A'}
                   icon={CloudRain}
                   accentColor="amber"
                   description="Precipitation > 10mm impact"
@@ -219,7 +222,7 @@ export const LocationAnalytics = () => {
               >
                 <div className="h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trends.hourly || []} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                    <AreaChart data={(trends.hourly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? null }))} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                       <defs>
                         <linearGradient id="locHourGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5} />
@@ -265,7 +268,7 @@ export const LocationAnalytics = () => {
                 >
                   <div className="h-60 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={trends.weekly || []} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
+                      <BarChart data={weeklyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
                         <XAxis dataKey="day" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
                         <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />
@@ -296,7 +299,7 @@ export const LocationAnalytics = () => {
                 >
                   <div className="h-60 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trends.monthly || []} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
+                      <LineChart data={monthlyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
                         <XAxis dataKey="month" stroke="#9CA3AF" tick={{ fontSize: 10 }} />
                         <YAxis stroke="#9CA3AF" tick={{ fontSize: 10 }} domain={[0, 100]} unit="%" />

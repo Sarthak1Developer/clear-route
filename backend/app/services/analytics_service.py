@@ -172,7 +172,7 @@ class AnalyticsService:
             raise ValueError(f"Corridor '{loc_code}' not found.")
 
         stats = self.repo.get_corridor_stats(loc.id)
-        corridor_avg = stats["avg_congestion_pct"] if stats["avg_congestion_pct"] is not None else 0.0
+        corridor_avg = stats["avg_congestion_pct"]
 
         # Hourly trend for this corridor
         hourly_rows = self.db.query(
@@ -193,19 +193,19 @@ class AnalyticsService:
             s_val = h_s_map.get(h, None)
             hourly.append({
                 "hour": h,
-                "congestion_pct": c_val if c_val is not None else 0.0,
-                "speed_kmh": s_val if s_val is not None else loc.free_flow_speed_kmh,
+                "congestion_pct": c_val,
+                "speed_kmh": s_val,
             })
 
         # Peak hour identification
-        observed_hours = [r for r in hourly if r["congestion_pct"] > 0]
+        observed_hours = [r for r in hourly if r["congestion_pct"] is not None]
         if observed_hours:
             peak_item = max(observed_hours, key=lambda x: x["congestion_pct"])
             peak_hour = peak_item["hour"]
             peak_congestion = peak_item["congestion_pct"]
         else:
-            peak_hour = 18
-            peak_congestion = corridor_avg
+            peak_hour = None
+            peak_congestion = None
 
         # Weekday vs weekend delta from DB
         wd_avg = self.db.query(func.avg(TrafficRecord.congestion_percentage)).filter(
@@ -220,7 +220,7 @@ class AnalyticsService:
         if wd_avg is not None and we_avg is not None:
             weekend_delta = round(float(we_avg) - float(wd_avg), 1)
         else:
-            weekend_delta = 0.0
+            weekend_delta = None
 
         # Weekly trend (Mon-Sun)
         weekly = self.repo.get_weekly_trend_data(location_id=loc.id)

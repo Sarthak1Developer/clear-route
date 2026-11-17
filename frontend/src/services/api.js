@@ -68,6 +68,14 @@ export const api = {
     }).then(handleResponse);
   },
 
+  async compareCongestionModels(payload) {
+    return fetch(`${BASE_URL}/predict/compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(handleResponse);
+  },
+
   async predictExplain(payload) {
     return fetch(`${BASE_URL}/predict/explain`, {
       method: 'POST',
