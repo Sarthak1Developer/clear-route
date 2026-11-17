@@ -100,7 +100,7 @@ def get_all_events(
             "expected_attendance": ev.expected_attendance or 0,
             "is_2026_future": ev.is_2026_future,
             "source": source_attr,
-            "source_verified": is_verified,
+            "source_verified": False, # A nonempty attribution is not independent verification.
             "impact_delta": impact,
         })
 

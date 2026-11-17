@@ -79,12 +79,15 @@ class TrafficDataPreprocessor:
             else:
                 df[col] = df[col].fillna(val)
 
-        defaults_bin = ["is_weekend", "is_peak_hour", "is_holiday", "event_present", "is_raining"]
-        for col in defaults_bin:
-            if col not in df.columns:
-                df[col] = 0
-            else:
-                df[col] = df[col].fillna(0).astype(int)
+        derived = {
+            "is_weekend": (df["day_of_week"] >= 5).astype(int),
+            "is_peak_hour": (df["hour"].between(8, 11) | df["hour"].between(17, 21)).astype(int),
+            "is_raining": (df["precipitation_mm"] > 0.5).astype(int),
+            "event_present": (~df["event_type"].isin(["None", "No Event"])).astype(int),
+            "is_holiday": 0,
+        }
+        for col, default in derived.items():
+            df[col] = df[col].fillna(default).astype(int) if col in df else default
 
         return df
 

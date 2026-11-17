@@ -97,3 +97,38 @@ def test_production_pipeline_rejects_demonstration_before_writing():
     from bigdata.spark_jobs.run_pipeline import run_complete_pipeline
     with pytest.raises(RuntimeError,match='demonstration'):
         run_complete_pipeline()
+
+def test_all_model_comparison_preserves_model_identity():
+    response=client.post('/api/predict/compare',json=BASE)
+    assert response.status_code==200
+    assert response.json()['models_succeeded']==4
+    for item in response.json()['results']:
+        assert item['model']==item['result']['selected_model']
+
+def test_weather_has_no_invented_congestion_multiplier(monkeypatch):
+    from backend.app.services.weather_service import WeatherService
+    monkeypatch.setattr(WeatherService,'_fetch_external_live_weather',lambda *args: {'current':{'temperature_2m':25,'precipitation':10,'relative_humidity_2m':80,'wind_speed_10m':10,'weather_code':63,'time':'2026-11-17T12:00'},'hourly':{'precipitation':[10]}})
+    result=client.get('/api/weather?city=Delhi').json()
+    assert result['provider_available'] is True
+    assert result['forecast_scenario']['expected_surge_pct'] is None
+
+def test_missing_weather_date_is_not_substituted():
+    assert client.get('/api/weather?city=Delhi&date=2000-01-01').status_code==404
+
+def test_unknown_city_impact_does_not_return_national_statistics():
+    assert client.get('/api/weather/impact?city=Atlantis').status_code==404
+    assert client.get('/api/events/impact?city=Atlantis').status_code==404
+
+def test_derived_flags_match_inference_contract():
+    frame=TrafficDataPreprocessor()._impute_inference_defaults(pd.DataFrame([{'hour':18,'day_of_week':6,'precipitation_mm':2,'event_type':'Festival'}]))
+    assert frame.iloc[0][['is_peak_hour','is_weekend','is_raining','event_present']].tolist()==[1,1,1,1]
+
+def test_clipped_linear_output_does_not_claim_additive_explanation(monkeypatch):
+    import numpy as np
+    class OutOfBoundsModel:
+        def predict(self, X): return np.full(len(X),150.0)
+    monkeypatch.setitem(inference_service.models,'linear_regression',OutOfBoundsModel())
+    result=inference_service.explain_prediction({'city':'Delhi','hour':18},'linear_regression')
+    assert result['predicted_congestion']==100.0
+    assert result['feature_contributions']==[]
+    assert result['additive_check'] is None

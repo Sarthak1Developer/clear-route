@@ -391,7 +391,7 @@ export const Overview = () => {
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Completeness Rate</span>
                   <p className="text-emerald-400 font-mono font-bold mt-0.5">
-                    {(quality?.completeness_rate || 99.4).toFixed(1)}% verified
+                    {(quality?.completeness_rate ?? 0).toFixed(1)}% verified
                   </p>
                 </div>
                 <div className="text-right">
@@ -412,7 +412,7 @@ export const Overview = () => {
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Corridors</span>
                   <p className="text-blue-400 font-mono font-bold mt-0.5">
-                    {coverage?.corridors_total || 25} segments
+                    {coverage?.corridors_total ?? 0} segments
                   </p>
                 </div>
               </div>

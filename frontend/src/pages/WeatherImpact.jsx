@@ -168,11 +168,11 @@ export const WeatherImpact = () => {
         />
         <MetricCard
           title="ERA5 Data Coverage"
-          value="100%"
-          unit="Harmonized"
+          value="Unverified"
+          unit="Archive"
           icon={Wind}
           accentColor="emerald"
-          description="Hourly timestamp aligned"
+          description="Historical provenance metadata missing"
         />
       </div>
 
@@ -251,7 +251,7 @@ export const WeatherImpact = () => {
             <span>Monsoon Dynamics</span>
           </h4>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            July and August data in Mumbai (Andheri/WEH) and Kolkata show up to 28% reductions in free-flow speeds during monsoon downpours exceeding 20mm/hr.
+            Compare rainfall bands using the available database sample. No real-world monsoon effect has been verified.
           </p>
         </div>
 
@@ -261,7 +261,7 @@ export const WeatherImpact = () => {
             <span>Summer Heat Waves</span>
           </h4>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            Temperatures exceeding 40°C in Delhi and Hyderabad correlate with reduced afternoon off-peak travel, shifting discretionary trips toward late evening hours (after 20:00 IST).
+            Temperature summaries describe associations in the supplied sample. They do not identify changes in travel demand or causal heat effects.
           </p>
         </div>
 
@@ -271,7 +271,7 @@ export const WeatherImpact = () => {
             <span>Fog & Visibility</span>
           </h4>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            December morning fog in Delhi correlates with lower vehicle speeds and delayed AM peak arrivals, stretching the commuter window from 08:30 to 11:30 IST.
+            The current traffic dataset does not establish fog-related delays. Visibility effects remain unverified.
           </p>
         </div>
       </div>

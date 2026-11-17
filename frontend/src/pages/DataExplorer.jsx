@@ -105,7 +105,7 @@ export const DataExplorer = () => {
             <span>Database Explorer & Governance Audit</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Inspect raw ground-truth traffic observation records stored in PostgreSQL/SQLite or audit the ingested source lineage and schema validation rules.
+            Inspect stored traffic sample records stored in PostgreSQL/SQLite or audit the ingested source lineage and schema validation rules.
           </p>
         </div>
 
@@ -198,7 +198,7 @@ export const DataExplorer = () => {
           {/* Records Table Card */}
           <Card
             title={`Database Traffic Observations (${totalRecords.toLocaleString()} Total Records)`}
-            subtitle="Ground-truth time-series records ingested from Zenodo Uber Movement speeds and mapped OpenStreetMap geometry"
+            subtitle="Application database sample; traffic provenance and consistency with Gold are unverified."
           >
             {loadingRecords ? (
               <LoadingSpinner label="Fetching paginated database records..." />
@@ -289,15 +289,15 @@ export const DataExplorer = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="Analytical Records"
-              value={quality?.total_gold_records?.toLocaleString() || '184,500'}
-              unit="Gold Rows"
+              value={quality?.total_gold_records?.toLocaleString() ?? 'Unavailable'}
+              unit="Database Rows"
               icon={Layers}
               accentColor="cyan"
-              description="Unified analytical dataset"
+              description="Application database sample"
             />
             <MetricCard
               title="Completeness Rate"
-              value={`${(quality?.completeness_rate || 99.4).toFixed(1)}%`}
+              value={`${(quality?.completeness_rate ?? 0).toFixed(1)}%`}
               icon={CheckCircle2}
               accentColor="emerald"
               description="Null handling applied in Silver"
@@ -307,7 +307,7 @@ export const DataExplorer = () => {
               value={`${quality?.duplicate_count ?? 0} Duplicates`}
               icon={ShieldCheck}
               accentColor="blue"
-              description="Window-deduplicated in Spark"
+              description="Database duplicate check"
             />
             <MetricCard
               title="Target Variable"
@@ -321,7 +321,7 @@ export const DataExplorer = () => {
           {/* Sources Table */}
           <Card
             title="Primary Data Sources & Provenance Catalog"
-            subtitle="Authentic open datasets ingested without synthetic number generation"
+            subtitle="Catalog attributions are unverified. Counts show application database rows where available."
           >
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
@@ -350,7 +350,7 @@ export const DataExplorer = () => {
                       </td>
                       <td className="py-3 px-2 font-mono text-slate-300">{s.temporal_coverage}</td>
                       <td className="py-3 px-2 text-slate-400">{s.spatial_coverage}</td>
-                      <td className="py-3 px-2 font-mono text-slate-200">{s.record_count?.toLocaleString()}</td>
+                      <td className="py-3 px-2 font-mono text-slate-200">{s.record_count == null ? 'Unavailable' : s.record_count.toLocaleString()}</td>
                       <td className="py-3 px-2 text-slate-400 font-mono text-[11px]">{s.license}</td>
                       <td className="py-3 px-2 text-right">
                         <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
@@ -384,7 +384,7 @@ export const DataExplorer = () => {
             <Card title="Dataset Limitations & Academic Integrity">
               <div className="space-y-3 text-slate-300 leading-relaxed text-[11px]">
                 <p>
-                  <strong className="text-amber-400">1. Temporal Coverage:</strong> Historical model training is strictly bound to April 1 – December 31, 2019 due to the temporal availability of the Zenodo Uber Movement archive.
+                  <strong className="text-amber-400">1. Temporal Coverage:</strong> Available model artifacts use generated demonstration traffic for April to December 2019. Genuine sensor observations are missing.
                 </p>
                 <p>
                   <strong className="text-amber-400">2. Accident Context:</strong> MoRTH road safety figures provide contextual corridor hazard ratings rather than real-time accident notifications.

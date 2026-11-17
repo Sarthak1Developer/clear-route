@@ -291,6 +291,16 @@ class InferenceService:
             X_trans = self._transform_features(df_imp)[0]
             model = self.models["linear_regression"]
             feat_names = self.preprocessor_data.get("feature_names", [])
+            unbounded_score = float(model.predict(X_trans.reshape(1, -1))[0])
+            if not 0.0 <= unbounded_score <= 100.0:
+                return {
+                    "prediction_id": pred_id, "model_id": model_key, "model_name": model_info["name"],
+                    "model_version": "1.0.0", "predicted_congestion": pred_congestion,
+                    "congestion_category": category, "base_value": None, "additive_check": None,
+                    "category_impacts": {}, "feature_contributions": [], "feature_values": features,
+                    "explanation_summary": "Linear score was clipped to physical bounds. Additive feature explanation unavailable for the clipped output.",
+                    "limitations_and_caveats": LIMITATIONS_AND_CAVEATS,
+                }
             coefs = model.coef_
             intercept = float(model.intercept_)
 
@@ -477,7 +487,7 @@ class InferenceService:
         # 6. Formatted Timestamp
         p_date = prediction_date or pd.Timestamp.now(tz="Asia/Kolkata").date().isoformat()
         p_time = prediction_time or f"{hour:02d}:00"
-        timestamp_str = f"{p_date}T{p_time}:00"
+        timestamp_str = pd.Timestamp.now(tz="Asia/Kolkata").isoformat()
 
         return {
             "prediction_id": pred_id,

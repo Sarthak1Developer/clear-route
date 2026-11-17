@@ -68,7 +68,7 @@ export const ModelPerformance = () => {
             <span>Four Model Approaches Benchmarking & SHAP</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Comparison of the 4 finalized model approaches. Models evaluated strictly on held-out test samples with zero temporal leakage.
+            Comparison of the 4 finalized model approaches. Metrics were reproduced on held-out benchmark samples. Legacy training shared a timestamp across train/validation and selected its champion using test scores; real-world validity is unverified.
           </p>
         </div>
 

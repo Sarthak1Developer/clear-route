@@ -98,7 +98,7 @@ export const EventImpact = () => {
           unit="Records"
           icon={Tag}
           accentColor="cyan"
-          description={`${selectedCity.name} verified events`}
+          description={`${selectedCity.name} catalog events`}
         />
         <MetricCard
           title="Festival Congestion Premium"
@@ -123,7 +123,7 @@ export const EventImpact = () => {
           value={impactData?.source || 'Gazette & BCCI'}
           icon={ShieldCheck}
           accentColor="blue"
-          description="Verified 2019 / 2026 feeds"
+          description="Source claims not independently verified"
         />
 
       </div>
@@ -166,8 +166,8 @@ export const EventImpact = () => {
 
       {/* Events Table */}
       <Card
-        title={`Verified Event Records — ${selectedCity.name}`}
-        subtitle="Catalog of verified 2019 historical training events and forward-looking 2026 contextual dates"
+        title={`Catalog Event Records — ${selectedCity.name}`}
+        subtitle="Catalog of 2019 historical event entries and forward-looking 2026 contextual dates"
       >
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
@@ -203,7 +203,7 @@ export const EventImpact = () => {
                   </td>
                   <td className="py-2.5 px-2">
                     <span className={`font-mono font-semibold ${ev.impact_delta > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {ev.impact_delta > 0 ? `+${ev.impact_delta}%` : `${ev.impact_delta || -12}%`}
+                      {Number.isFinite(ev.impact_delta) ? `${ev.impact_delta > 0 ? '+' : ''}${ev.impact_delta}%` : 'Not observed'}
                     </span>
                   </td>
                 </tr>

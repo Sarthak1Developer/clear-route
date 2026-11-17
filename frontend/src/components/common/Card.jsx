@@ -52,16 +52,16 @@ export const MetricCard = ({
 
   return (
     <div className={`bg-[#111827] border border-slate-800/90 rounded-xl p-5 hover:border-slate-700 transition-colors shadow-md shadow-black/10 ${className}`}>
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-400">{title}</span>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-slate-50 font-mono">{value}</span>
+          <div className="mt-2 flex flex-wrap items-baseline gap-2">
+            <span className="text-2xl font-bold tracking-tight text-slate-50 font-mono break-words min-w-0">{value}</span>
             {unit && <span className="text-xs font-medium text-slate-400">{unit}</span>}
           </div>
         </div>
         {Icon && (
-          <div className={`p-2.5 rounded-lg border ${accentClasses[accentColor] || accentClasses.cyan}`}>
+          <div className={`shrink-0 p-2.5 rounded-lg border ${accentClasses[accentColor] || accentClasses.cyan}`}>
             <Icon className="w-5 h-5" />
           </div>
         )}

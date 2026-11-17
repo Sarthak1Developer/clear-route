@@ -1,6 +1,7 @@
 import datetime
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from sqlalchemy import func, desc
 from backend.app.repositories.data_repository import DataRepository
 from backend.app.models.entities import City, Location, TrafficRecord, WeatherRecord, Event
@@ -258,11 +259,15 @@ class AnalyticsService:
         loc_id = None
         if location_id:
             loc = self.repo.get_location_by_code(location_id)
+            if not loc:
+                raise HTTPException(status_code=404, detail="Unknown corridor")
             if loc:
                 loc_id = loc.id
                 city_id = loc.city_id
         elif city_name:
             c = self.repo.get_city_by_name(city_name)
+            if not c:
+                raise HTTPException(status_code=404, detail="Unknown city")
             if c:
                 city_id = c.id
         res = self.repo.get_event_impact_metrics(
@@ -286,11 +291,15 @@ class AnalyticsService:
         loc_id = None
         if location_id:
             loc = self.repo.get_location_by_code(location_id)
+            if not loc:
+                raise HTTPException(status_code=404, detail="Unknown corridor")
             if loc:
                 loc_id = loc.id
                 city_id = loc.city_id
         elif city_name:
             c = self.repo.get_city_by_name(city_name)
+            if not c:
+                raise HTTPException(status_code=404, detail="Unknown city")
             if c:
                 city_id = c.id
         res = self.repo.get_weather_impact_data(

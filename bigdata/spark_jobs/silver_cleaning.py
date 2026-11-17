@@ -96,6 +96,9 @@ def clean_silver_layer(
 
     # 6. Safe 1-to-1 Join with Road Infrastructure (No Cartesian Explosion)
     osm_cols = ["location_id", "road_type", "road_lanes", "surface", "maxspeed", "length_m", "latitude", "longitude", "accident_risk_score"]
+    missing = sorted(set(osm_cols) - set(df_osm.columns))
+    if missing:
+        raise ValueError(f"Infrastructure dataset is missing required columns: {missing}. Supply the missing contextual source fields; no risk scores were invented.")
     df_osm_subset = df_osm[osm_cols].drop_duplicates(subset=["location_id"])
     
     pre_join_len = len(df_traffic)
