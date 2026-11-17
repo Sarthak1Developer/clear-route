@@ -341,7 +341,7 @@ export const DataExplorer = () => {
                     <tr key={s.id || idx} className="hover:bg-slate-800/30 transition-colors">
                       <td className="py-3 px-3">
                         <div className="font-semibold text-slate-100">{s.source_name}</div>
-                        <div className="text-[10px] text-slate-400">{s.provenance_url || 'Verified Repository'}</div>
+                        <div className="text-[10px] text-slate-400">{s.provenance_url || 'Source not verified'}</div>
                       </td>
                       <td className="py-3 px-2">
                         <Badge variant={s.category === 'Traffic' ? 'accent' : s.category === 'Weather' ? 'primary' : 'default'}>
