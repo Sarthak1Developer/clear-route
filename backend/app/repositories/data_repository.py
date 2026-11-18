@@ -74,8 +74,8 @@ class DataRepository:
         results = []
         for loc in locations:
             c_stats = self.get_corridor_stats(loc.id)
-            c_val = c_stats["avg_congestion_pct"] if c_stats["avg_congestion_pct"] is not None else 0.0
-            s_val = c_stats["observed_speed_kmh"] if c_stats["observed_speed_kmh"] is not None else loc.free_flow_speed_kmh
+            c_val = c_stats["avg_congestion_pct"]
+            s_val = c_stats["observed_speed_kmh"]
             results.append({
                 "id": loc.id,
                 "location_code": loc.location_code,
@@ -110,8 +110,8 @@ class DataRepository:
         results = []
         for loc in locs:
             stats = self.get_corridor_stats(loc.id)
-            c_val = stats["avg_congestion_pct"] if stats["avg_congestion_pct"] is not None else 0.0
-            s_val = stats["observed_speed_kmh"] if stats["observed_speed_kmh"] is not None else loc.free_flow_speed_kmh
+            c_val = stats["avg_congestion_pct"]
+            s_val = stats["observed_speed_kmh"]
             results.append({
                 "id": loc.id,
                 "location_code": loc.location_code,
@@ -300,121 +300,37 @@ class DataRepository:
             query = query.filter(WeatherRecord.city_id == city_id)
         return query.order_by(desc(WeatherRecord.timestamp)).first()
 
-    def get_weather_impact_data(
-        self,
-        city_id: Optional[int] = None,
-        location_id: Optional[int] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Performs genuine SQL join between TrafficRecord and WeatherRecord to compute
-        empirical precipitation bands, temperature bins, and Pearson correlation coefficients.
-        """
-        query = self.db.query(
-            TrafficRecord.congestion_percentage,
-            TrafficRecord.observed_speed_kmh,
-            WeatherRecord.precipitation_mm,
-            WeatherRecord.temperature_c
-        ).join(Location, Location.id == TrafficRecord.location_id)\
-         .join(WeatherRecord, and_(WeatherRecord.city_id == Location.city_id, WeatherRecord.timestamp == TrafficRecord.timestamp))
-
-        if location_id is not None:
-            query = query.filter(TrafficRecord.location_id == location_id)
-        elif city_id is not None:
-            query = query.filter(Location.city_id == city_id)
-
-        if start_date:
-            query = query.filter(func.date(TrafficRecord.timestamp) >= start_date.strip())
-        if end_date:
-            query = query.filter(func.date(TrafficRecord.timestamp) <= end_date.strip())
-
-        rows = query.all()
-        if not rows:
-            return {
-                "heavy_rain_surge": 0.0,
-                "rain_correlation": 0.0,
-                "temp_correlation": 0.0,
-                "rain_bands": [],
-                "temp_bands": []
-            }
-
-        c_pcts = [float(r[0]) for r in rows if r[0] is not None]
-        speeds = [float(r[1]) for r in rows if r[1] is not None]
-        precips = [float(r[2]) for r in rows if r[2] is not None]
-        temps = [float(r[3]) for r in rows if r[3] is not None]
-
-        # Calculate Pearson correlations
-        def pearson_corr(x, y):
-            n = len(x)
-            if n < 2:
-                return 0.0
-            mx, my = sum(x) / n, sum(y) / n
-            var_x = sum((xi - mx) ** 2 for xi in x)
-            var_y = sum((yi - my) ** 2 for yi in y)
-            cov = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
-            if var_x == 0 or var_y == 0:
-                return 0.0
-            return round(cov / ((var_x * var_y) ** 0.5), 4)
-
-        rain_corr = pearson_corr(precips, c_pcts)
-        temp_corr = pearson_corr(temps, c_pcts)
-
-        # Precipitation Bands
-        bands_def = [
-            ("Dry (<0.5mm)", lambda p: p < 0.5),
-            ("Light Rain (0.5-5mm)", lambda p: 0.5 <= p < 5.0),
-            ("Moderate (5-15mm)", lambda p: 5.0 <= p < 15.0),
-            ("Heavy Monsoon (>15mm)", lambda p: p >= 15.0),
-        ]
-        rain_bands = []
-        dry_avg = None
-        monsoon_avg = None
-
-        for name, filter_fn in bands_def:
-            matching_c = [c for c, p in zip(c_pcts, precips) if filter_fn(p)]
-            matching_s = [s for s, p in zip(speeds, precips) if filter_fn(p)]
-            avg_c = round(sum(matching_c) / len(matching_c), 1) if matching_c else None
-            avg_s = round(sum(matching_s) / len(matching_s), 1) if matching_s else None
-            rain_bands.append({
-                "intensity": name,
-                "band": name,
-                "avg_congestion": avg_c if avg_c is not None else 0.0,
-                "avg_speed_kmh": avg_s if avg_s is not None else 0.0,
-                "sample_count": len(matching_c)
-            })
-            if name.startswith("Dry"):
-                dry_avg = avg_c
-            elif name.startswith("Heavy"):
-                monsoon_avg = avg_c
-
-        heavy_rain_surge = round(monsoon_avg - dry_avg, 1) if (monsoon_avg is not None and dry_avg is not None) else 0.0
-
-        # Temperature Bands
-        temp_defs = [
-            ("10 - 18°C (Winter)", lambda t: t < 19.0),
-            ("19 - 26°C (Mild)", lambda t: 19.0 <= t < 27.0),
-            ("27 - 35°C (Warm)", lambda t: 27.0 <= t < 36.0),
-            ("36 - 45°C (Heatwave)", lambda t: t >= 36.0),
-        ]
-        temp_bands = []
-        for name, filter_fn in temp_defs:
-            matching_c = [c for c, t in zip(c_pcts, temps) if filter_fn(t)]
-            avg_c = round(sum(matching_c) / len(matching_c), 1) if matching_c else None
-            temp_bands.append({
-                "temp_range": name,
-                "avg_congestion": avg_c if avg_c is not None else 0.0,
-                "sample_count": len(matching_c)
-            })
-
-        return {
-            "heavy_rain_surge": heavy_rain_surge,
-            "rain_correlation": rain_corr,
-            "temp_correlation": temp_corr,
-            "rain_bands": rain_bands,
-            "temp_bands": temp_bands,
-            "source": "Joined TrafficRecord & Open-Meteo ERA5 Reanalysis Database"
-        }
+    def get_weather_impact_data(self, city_id=None, location_id=None, start_date=None, end_date=None):
+        import pandas as pd
+        query=self.db.query(TrafficRecord.congestion_percentage,TrafficRecord.observed_speed_kmh,
+            WeatherRecord.precipitation_mm,WeatherRecord.temperature_c,WeatherRecord.humidity_pct,
+            WeatherRecord.wind_speed_kmh,TrafficRecord.hour,City.city_name).join(Location,Location.id==TrafficRecord.location_id).join(City,City.id==Location.city_id).join(WeatherRecord,and_(WeatherRecord.city_id==Location.city_id,WeatherRecord.timestamp==TrafficRecord.timestamp))
+        if location_id is not None:query=query.filter(TrafficRecord.location_id==location_id)
+        elif city_id is not None:query=query.filter(Location.city_id==city_id)
+        if start_date:query=query.filter(func.date(TrafficRecord.timestamp)>=start_date)
+        if end_date:query=query.filter(func.date(TrafficRecord.timestamp)<=end_date)
+        frame=pd.DataFrame(query.all(),columns=['congestion','speed','rain','temperature','humidity','wind','hour','city'])
+        def corr(column):
+            if len(frame)<3 or frame[column].nunique()<2 or frame.congestion.nunique()<2:return None
+            return round(float(frame[column].corr(frame.congestion)),4)
+        def summary(column):
+            return {'mean':round(float(frame[column].mean()),2),'min':float(frame[column].min()),'max':float(frame[column].max()),'correlation':corr(column)} if len(frame) else None
+        bands=[]
+        for name,lower,upper in [('Dry (<0.5mm)',0,.5),('Light Rain (0.5-5mm)',.5,5),('Moderate (5-15mm)',5,15),('Heavy Monsoon (>15mm)',15,float('inf'))]:
+            rows=frame[(frame.rain>=lower)&(frame.rain<upper)]
+            bands.append({'band':name,'intensity':name,'sample_count':len(rows),'avg_congestion':round(float(rows.congestion.mean()),2) if len(rows) else None,'avg_speed_kmh':round(float(rows.speed.mean()),2) if len(rows) else None})
+        temps=[]
+        for name,lower,upper in [('Below 19 C',-float('inf'),19),('19 - 27 C',19,27),('27 - 36 C',27,36),('36 C and above',36,float('inf'))]:
+            rows=frame[(frame.temperature>=lower)&(frame.temperature<upper)]
+            temps.append({'temp_range':name,'sample_count':len(rows),'avg_congestion':round(float(rows.congestion.mean()),2) if len(rows) else None})
+        dry,heavy=bands[0]['avg_congestion'],bands[-1]['avg_congestion']
+        return {'heavy_rain_surge':round(heavy-dry,2) if dry is not None and heavy is not None else None,
+            'rain_correlation':corr('rain'),'temp_correlation':corr('temperature'),'rain_bands':bands,'temp_bands':temps,
+            'humidity_summary':summary('humidity'),'wind_summary':summary('wind'),'sample_count':len(frame),
+            'status':'available' if len(frame) else 'unavailable','reason':None if len(frame) else 'Insufficient weather observations matched to traffic timestamps.',
+            'city_comparison':[{'city':city,'mean_congestion':round(float(rows.congestion.mean()),2),'mean_rainfall_mm':round(float(rows.rain.mean()),2),'sample_count':len(rows)} for city,rows in frame.groupby('city')],
+            'hourly':[{'hour':int(hour),'mean_congestion':round(float(rows.congestion.mean()),2),'rainfall_mm':round(float(rows.rain.mean()),2),'sample_count':len(rows)} for hour,rows in frame.groupby('hour')],
+            'source':'Timestamp/city-joined database observations; historical source provenance unverified. Associations are not causal effects.'}
 
     # -------------------------------------------------------------------------
     # Events & Public Holidays
@@ -459,131 +375,46 @@ class DataRepository:
     def get_events_by_city_name(self, city_name: str = "") -> List[Event]:
         return self.get_filtered_events(city_name=city_name if city_name else None)
 
-    def calculate_event_impact_delta(self, event: Event, location_id: Optional[int] = None) -> Optional[float]:
-        """
-        Calculates genuine percentage point delta between observed traffic on event date
-        versus baseline average for that city or location corridor.
-        Returns None if event is future or no traffic records were logged on that date.
-        """
-        if event.is_2026_future:
-            return None
+    def calculate_event_impact_delta(self, event, location_id=None):
+        if event.is_2026_future:return None
+        date=str(event.event_date)
+        query=self.db.query(TrafficRecord.congestion_percentage).join(Location).filter(Location.city_id==event.city_id)
+        if location_id is not None:query=query.filter(TrafficRecord.location_id==location_id)
+        event_values=[r[0] for r in query.filter(func.date(TrafficRecord.timestamp)==date).all()]
+        event_dates=[str(e[0]) for e in self.db.query(Event.event_date).filter(Event.city_id==event.city_id,Event.is_2026_future==False).all()]
+        baseline=[r[0] for r in query.filter(TrafficRecord.day_of_week==event.event_date.weekday(),~func.date(TrafficRecord.timestamp).in_(event_dates)).all()]
+        if not event_values or not baseline:return None
+        return round(sum(event_values)/len(event_values)-sum(baseline)/len(baseline),2)
 
-        date_str = str(event.event_date)
-        base_query = self.db.query(func.avg(TrafficRecord.congestion_percentage))
-        event_query = self.db.query(func.avg(TrafficRecord.congestion_percentage)).filter(
-            func.date(TrafficRecord.timestamp) == date_str
-        )
-
-        if location_id is not None:
-            base_query = base_query.filter(TrafficRecord.location_id == location_id)
-            event_query = event_query.filter(TrafficRecord.location_id == location_id)
-        else:
-            base_query = base_query.join(Location).filter(Location.city_id == event.city_id)
-            event_query = event_query.join(Location).filter(Location.city_id == event.city_id)
-
-        baseline_avg = base_query.scalar()
-        event_avg = event_query.scalar()
-
-        if baseline_avg is not None and event_avg is not None:
-            return round(float(event_avg) - float(baseline_avg), 1)
-        return None
-
-    def get_event_impact_metrics(
-        self,
-        city_id: Optional[int] = None,
-        location_id: Optional[int] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Calculates empirical event impact by comparing traffic on event dates vs normal dates.
-        Never fabricates hardcoded numbers. Distinguishes unobserved dates cleanly.
-        """
-        events_query = self.db.query(Event).filter(Event.is_2026_future == False)
-        if city_id is not None:
-            events_query = events_query.filter(Event.city_id == city_id)
-        historical_events = events_query.all()
-
-        festival_dates = {str(e.event_date) for e in historical_events if e.event_type.lower() == "festival"}
-        holiday_dates = {str(e.event_date) for e in historical_events if "holiday" in e.event_type.lower()}
-        all_event_dates = {str(e.event_date) for e in historical_events}
-
-        traffic_q = self.db.query(
-            func.date(TrafficRecord.timestamp).label("d_str"),
-            TrafficRecord.hour,
-            TrafficRecord.congestion_percentage
-        ).join(Location)
-
-        if location_id is not None:
-            traffic_q = traffic_q.filter(TrafficRecord.location_id == location_id)
-        elif city_id is not None:
-            traffic_q = traffic_q.filter(Location.city_id == city_id)
-
-        if start_date:
-            traffic_q = traffic_q.filter(func.date(TrafficRecord.timestamp) >= start_date.strip())
-        if end_date:
-            traffic_q = traffic_q.filter(func.date(TrafficRecord.timestamp) <= end_date.strip())
-
-        traffic_rows = traffic_q.all()
-
-        normal_records = []
-        festival_records = []
-        holiday_records = []
-        event_records = []
-
-        normal_hourly: Dict[int, List[float]] = {h: [] for h in range(24)}
-        event_hourly: Dict[int, List[float]] = {h: [] for h in range(24)}
-
-        for d_str, hour, c_pct in traffic_rows:
-            if c_pct is None:
-                continue
-            val = float(c_pct)
-            is_ev = d_str in all_event_dates
-
-            if is_ev:
-                event_records.append(val)
-                event_hourly[hour].append(val)
-                if d_str in festival_dates:
-                    festival_records.append(val)
-                if d_str in holiday_dates:
-                    holiday_records.append(val)
-            else:
-                normal_records.append(val)
-                normal_hourly[hour].append(val)
-
-        normal_baseline = (sum(normal_records) / len(normal_records)) if normal_records else 0.0
-
-        festival_delta = (
-            round((sum(festival_records) / len(festival_records)) - normal_baseline, 1)
-            if festival_records else None
-        )
-        holiday_delta = (
-            round((sum(holiday_records) / len(holiday_records)) - normal_baseline, 1)
-            if holiday_records else None
-        )
-
-        hourly_comp = []
-        for h in range(24):
-            norm_vals = normal_hourly.get(h, [])
-            ev_vals = event_hourly.get(h, [])
-
-            norm_c = round(sum(norm_vals) / len(norm_vals), 1) if norm_vals else 0.0
-            ev_c = round(sum(ev_vals) / len(ev_vals), 1) if ev_vals else norm_c
-
-            hourly_comp.append({
-                "hour": h,
-                "normal_congestion": norm_c,
-                "event_congestion": ev_c,
-                "has_event_data": len(ev_vals) > 0
-            })
-
-        return {
-            "festival_delta": festival_delta,
-            "holiday_delta": holiday_delta,
-            "hourly_comparison": hourly_comp,
-            "data_backed": True,
-            "source": "State Gazettes & Historical Traffic Database"
-        }
+    def get_event_impact_metrics(self, city_id=None, location_id=None, start_date=None, end_date=None):
+        # Existing records provide city/date, not venue radius or start/end times.
+        # Compare against non-event dates with the same weekday in the same city/hour.
+        event_q=self.db.query(Event).filter(Event.is_2026_future==False)
+        if city_id is not None:event_q=event_q.filter(Event.city_id==city_id)
+        events=event_q.all()
+        keys={};all_dates=set()
+        for event in events:
+            key=(event.city_id,str(event.event_date));keys.setdefault(key,set()).add(event.event_type);all_dates.add(key)
+        q=self.db.query(Location.city_id,func.date(TrafficRecord.timestamp),TrafficRecord.hour,TrafficRecord.day_of_week,TrafficRecord.congestion_percentage).join(Location,Location.id==TrafficRecord.location_id)
+        if location_id is not None:q=q.filter(TrafficRecord.location_id==location_id)
+        elif city_id is not None:q=q.filter(Location.city_id==city_id)
+        if start_date:q=q.filter(func.date(TrafficRecord.timestamp)>=start_date)
+        if end_date:q=q.filter(func.date(TrafficRecord.timestamp)<=end_date)
+        rows=q.all();baselines={}
+        for cid,date,hour,dow,value in rows:
+            if (cid,date) not in all_dates:baselines.setdefault((cid,hour,dow),[]).append(float(value))
+        normal={h:[] for h in range(24)};active={h:[] for h in range(24)};deltas={'Festival':[],'Public Holiday':[]}
+        for cid,date,hour,dow,value in rows:
+            comparison=baselines.get((cid,hour,dow),[])
+            if (cid,date) in all_dates and comparison:
+                baseline=sum(comparison)/len(comparison);active[hour].append(float(value));normal[hour].append(baseline)
+                for category in keys[(cid,date)]:
+                    if category in deltas:deltas[category].append(float(value)-baseline)
+        mean=lambda xs:round(sum(xs)/len(xs),2) if xs else None
+        return {'festival_delta':mean(deltas['Festival']),'holiday_delta':mean(deltas['Public Holiday']),
+            'hourly_comparison':[{'hour':h,'normal_congestion':mean(normal[h]),'event_congestion':mean(active[h]),'has_event_data':bool(active[h]),'sample_count':len(active[h])} for h in range(24)],
+            'data_backed':bool(any(active.values())),
+            'source':'City-day annotations compared with same-city/hour/weekday non-event records. Event venue, duration, attendance and independent provenance unavailable; no causal effect claimed.'}
 
     # -------------------------------------------------------------------------
     # Governance, Quality & Coverage
@@ -655,7 +486,8 @@ class DataRepository:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         page: int = 1,
-        page_size: int = 25
+        page_size: int = 25,
+        sort: str = "timestamp_desc"
     ) -> Dict[str, Any]:
         """Returns paginated database traffic records with optional city, corridor and date filtering."""
         query = self.db.query(TrafficRecord).join(Location, Location.id == TrafficRecord.location_id).join(City, City.id == Location.city_id)
@@ -681,7 +513,8 @@ class DataRepository:
 
         total = query.count()
         offset = max(0, (page - 1) * page_size)
-        rows = query.order_by(desc(TrafficRecord.timestamp)).offset(offset).limit(page_size).all()
+        order={"timestamp_desc":TrafficRecord.timestamp.desc(),"timestamp_asc":TrafficRecord.timestamp.asc(),"congestion_desc":TrafficRecord.congestion_percentage.desc(),"congestion_asc":TrafficRecord.congestion_percentage.asc()}[sort]
+        rows = query.order_by(order,TrafficRecord.id).offset(offset).limit(page_size).all()
 
         records = [
             {

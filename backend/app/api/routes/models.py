@@ -99,7 +99,11 @@ def get_model_performance(db: Session = Depends(get_db)):
                 if index == 10:
                     break
 
+    config_path = os.path.join(PROJECT_ROOT, "ml", "artifacts", "training_config.json")
+    chronology = json.loads(open(config_path, encoding="utf-8").read()).get("dataset_split_chronology", {}) if os.path.exists(config_path) else {}
     return {
+        "evaluation_sample_count": metrics_data.get("total_test_samples"),
+        "evaluation_period": chronology.get("test_period"),
         "models": model_items,
         "best_model": best,
         "actual_vs_predicted": actual_vs_pred,

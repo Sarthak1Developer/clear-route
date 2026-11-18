@@ -44,7 +44,7 @@ export const Header = () => {
 
         <div className="flex items-center gap-1.5 px-3 py-1 bg-cyan-950/40 border border-cyan-800/60 rounded-lg text-xs font-medium text-cyan-300">
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-mono">Primary: XGBoost + SHAP</span>
+          <span className="font-mono">Four-model comparison</span>
         </div>
       </div>
 

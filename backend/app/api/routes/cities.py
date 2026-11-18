@@ -33,7 +33,7 @@ def get_all_cities(db: Session = Depends(get_db)):
             "lng": c.longitude,
             "zoom": c.zoom_level,
             "corridor_count": len(locs),
-            "avg_congestion_pct": round(float(avg_c), 1) if avg_c is not None else 0.0,
+            "avg_congestion_pct": round(float(avg_c), 2) if avg_c is not None else None,
         })
     return result
 

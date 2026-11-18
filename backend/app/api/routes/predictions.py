@@ -1,6 +1,9 @@
 import datetime
 import json
 import logging
+from functools import lru_cache
+from pathlib import Path
+import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.database.session import get_db
@@ -17,6 +20,14 @@ from backend.app.models.entities import Prediction, Location
 logger = logging.getLogger("clearroute.routes.predictions")
 
 router = APIRouter(tags=["Predictions"])
+
+@lru_cache(maxsize=1)
+def corridor_lengths():
+    path=Path(__file__).resolve().parents[4]/"data/gold/master_congestion/gold_master_congestion.parquet"
+    if not path.exists():
+        return {}
+    frame=pd.read_parquet(path,columns=["location_id","length_m"])
+    return frame.groupby("location_id").length_m.first().to_dict()
 
 def resolve_temporal(req):
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
@@ -66,7 +77,9 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
     lanes = req.road_lanes if req.road_lanes is not None else getattr(loc, "road_lanes", 4)
     rtype = req.road_type if req.road_type is not None else getattr(loc, "road_type", "primary")
     ff_speed = req.free_flow_speed_kmh if req.free_flow_speed_kmh is not None else getattr(loc, "free_flow_speed_kmh", 60.0)
-    length = req.length_m if req.length_m is not None else getattr(loc, "length_m", 3000.0)
+    length = req.length_m if req.length_m is not None else corridor_lengths().get(loc.location_code)
+    if length is None:
+        raise HTTPException(status_code=503, detail="Corridor length unavailable in analytical feature store")
     risk_score = req.accident_risk_score if req.accident_risk_score is not None else getattr(loc, "accident_risk_score", 0.5)
 
     # Run dedicated ML inference service
@@ -139,6 +152,13 @@ def compare_congestion_models(req: PredictionRequest, db: Session = Depends(get_
     Runs each available estimator against the exact same validated scenario.
     Individual model failures are reported explicitly; no substitute prediction is generated.
     """
+    repo = DataRepository(db)
+    location = repo.get_location_by_code_or_id(req.location_id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Unknown corridor")
+    if location.city.city_name != req.city:
+        raise HTTPException(status_code=400, detail="Corridor does not belong to selected city")
+    resolve_temporal(req)
     model_keys = ["xgboost", "random_forest", "linear_regression", "historical_mean"]
     results = []
     for model_key in model_keys:
@@ -146,17 +166,23 @@ def compare_congestion_models(req: PredictionRequest, db: Session = Depends(get_
             results.append({
                 "model": model_key,
                 "status": "unavailable",
+                "available": False,
+                "explanation_available": False,
+                "metrics": inference_service.get_model_info(model_key),
                 "error": f"Model '{model_key}' or its required preprocessing artifact is not loaded."
             })
             continue
         try:
             model_request = req.model_copy(update={"model_type": model_key})
             result = predict_congestion(model_request, db)
-            results.append({"model": model_key, "status": "success", "result": result})
+            results.append({"model": model_key, "status": "success", "available": True, "metrics": inference_service.get_model_info(model_key), "explanation_available": bool(result.get("feature_contributions")), "result": result})
         except HTTPException as exc:
             results.append({
                 "model": model_key,
                 "status": "error",
+                "available": True,
+                "explanation_available": False,
+                "metrics": inference_service.get_model_info(model_key),
                 "error": str(exc.detail),
                 "http_status": exc.status_code
             })
@@ -205,7 +231,9 @@ def explain_congestion_prediction(req: PredictionRequest, db: Session = Depends(
     lanes = req.road_lanes if req.road_lanes is not None else getattr(loc, "road_lanes", 4)
     rtype = req.road_type if req.road_type is not None else getattr(loc, "road_type", "primary")
     ff_speed = req.free_flow_speed_kmh if req.free_flow_speed_kmh is not None else getattr(loc, "free_flow_speed_kmh", 60.0)
-    length = req.length_m if req.length_m is not None else getattr(loc, "length_m", 3000.0)
+    length = req.length_m if req.length_m is not None else corridor_lengths().get(loc.location_code)
+    if length is None:
+        raise HTTPException(status_code=503, detail="Corridor length unavailable in analytical feature store")
     risk_score = req.accident_risk_score if req.accident_risk_score is not None else getattr(loc, "accident_risk_score", 0.5)
 
     is_peak = (8 <= hour <= 11) or (17 <= hour <= 21)

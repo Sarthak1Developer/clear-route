@@ -1,3 +1,11 @@
+# Evaluation branch — 18 November 2026
+
+Run `python scripts/run_local.py` to start the reconciled backend. It creates a new ignored `data/clearroute_analytics.db` from checked-in Gold and preserves `data/clearroute_app.db`. Then run `npm ci --prefix frontend` and `npm run dev --prefix frontend`.
+
+The default prediction action compares all four existing models on identical inputs. Gold contains 165,000 benchmark rows; external observational provenance remains unverified. Raw pipeline rebuilding is blocked by missing source fields and weather provenance. See `docs/audit/EVALUATION_REPORT.md` for validation and limitations, and `docs/setup/evaluation_deployment.md` for deployment requirements. Older production claims below are not verified.
+
+---
+
 > AUDIT CORRECTION (17 November 2026): Current traffic is generated benchmark demonstration data, not verified Uber Movement sensor observations. Metrics describe this benchmark only. Real-world forecasting, causal weather/event effects, and production readiness are unverified. See docs/audit/FINAL_AUDIT.md for executed checks and blockers. Earlier claims below are historical documentation, not current verification.
 
 # ClearRoute: Smart Transportation & Predictive Traffic Analytics Platform

@@ -61,7 +61,7 @@ export const ModelPerformance = () => {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">Empirical Validation</span>
             <span className="text-slate-600">•</span>
-            <span className="text-xs text-slate-400">Chronological Held-Out Test Set (Nov 21 - Dec 31, 2019)</span>
+            <span className="text-xs text-slate-400">Chronological Held-Out Benchmark</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             <Cpu className="w-6 h-6 text-cyan-400" />
@@ -81,6 +81,7 @@ export const ModelPerformance = () => {
       </div>
 
       {/* Model Comparison Table */}
+      <p className="text-xs text-slate-400">Evaluation samples: {performanceData.evaluation_sample_count ?? 'Unavailable'} · Period: {performanceData.evaluation_period || 'Unavailable'}</p>
       <Card
         title="Chronological Test Benchmark (15% Held-Out Test Split)"
         subtitle="Evaluated across Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and R² score"

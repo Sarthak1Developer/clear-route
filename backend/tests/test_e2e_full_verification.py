@@ -344,7 +344,7 @@ def test_17_empty_database_behavior():
     ov = svc.get_overview()
     assert ov["total_cities"] == 0
     assert ov["total_locations"] == 0
-    assert ov["avg_congestion_pct"] == 0.0
+    assert ov["avg_congestion_pct"] is None  # No observations is not a measured zero.
 
     # Quality & Coverage
     qual = repo.get_data_quality_stats()
@@ -361,7 +361,7 @@ def test_17_empty_database_behavior():
 
     # Weather & Event Impact
     w_imp = repo.get_weather_impact_data()
-    assert w_imp["heavy_rain_surge"] == 0.0
+    assert w_imp["heavy_rain_surge"] is None  # No matched weather observations.
 
     e_imp = svc.get_event_impact()
     assert e_imp["festival_delta"] is None
@@ -425,4 +425,4 @@ def test_20_external_apis_unavailable_handling():
     assert data["city"] == "Delhi"
     # Even if external provider is offline, returns verified historical archive
     assert data["source"] is not None
-    assert "Open-Meteo" in data["provenance"]
+    assert ("Open-Meteo" if data["provider_available"] else "external provenance unverified") in data["provenance"]

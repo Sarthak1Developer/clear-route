@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { HistoricalProfile } from '../components/common/HistoricalProfile';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -96,7 +97,7 @@ export const CityAnalytics = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="City Mean Congestion"
-              value={summary.avg_congestion_pct !== undefined && summary.avg_congestion_pct !== null ? `${summary.avg_congestion_pct.toFixed(1)}%` : '0.0%'}
+              value={summary.avg_congestion_pct !== undefined && summary.avg_congestion_pct !== null ? `${summary.avg_congestion_pct.toFixed(1)}%` : 'Unavailable'}
               icon={Gauge}
               accentColor="cyan"
               description={`Category: ${summary.congestion_category || 'Normal'}`}
@@ -115,14 +116,14 @@ export const CityAnalytics = () => {
               unit="Segments"
               icon={MapPin}
               accentColor="blue"
-              description="OpenStreetMap + Zenodo Mapped"
+              description="Configured Gold road metadata"
             />
             <MetricCard
               title="Monsoon Rainfall Delta"
-              value={summary.rain_impact_delta !== undefined && summary.rain_impact_delta !== null ? `+${summary.rain_impact_delta.toFixed(1)}%` : '0.0%'}
+              value={summary.rain_impact_delta !== undefined && summary.rain_impact_delta !== null ? `${summary.rain_impact_delta > 0 ? '+' : ''}${summary.rain_impact_delta.toFixed(1)} pp` : 'Unavailable'}
               icon={CloudRain}
               accentColor="rose"
-              description="Congestion surge during heavy rain"
+              description="Association only; unavailable without dry and heavy-rain groups"
             />
           </div>
 
@@ -226,6 +227,7 @@ export const CityAnalytics = () => {
           </div>
         </>
       ) : null}
+      <HistoricalProfile city={selectedCity.name} showMonthly/>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { HistoricalFilters } from '../components/common/HistoricalFilters';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -14,7 +15,9 @@ import {
 } from 'lucide-react';
 
 export const WeatherImpact = () => {
+  const [historicalFilters,setHistoricalFilters]=useState({});
   const { selectedCity } = useApp();
+  useEffect(()=>{setHistoricalFilters({});},[selectedCity.name]);
   const [weatherData, setWeatherData] = useState(null);
   const [cityWeather, setCityWeather] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ export const WeatherImpact = () => {
       try {
         setLoading(true);
         const [impactRes, cityRes] = await Promise.all([
-          api.getWeatherImpact(selectedCity.name),
+          api.getWeatherImpact(selectedCity.name,historicalFilters),
           api.getWeather(selectedCity.name).catch(() => null),
         ]);
         if (isMounted) {
@@ -42,7 +45,7 @@ export const WeatherImpact = () => {
     }
     loadWeather();
     return () => { isMounted = false; };
-  }, [selectedCity]);
+  }, [selectedCity,historicalFilters]);
 
 
   if (loading) return <LoadingSpinner label="Analyzing meteorological correlation curves (Open-Meteo ERA5)..." />;
@@ -50,20 +53,21 @@ export const WeatherImpact = () => {
 
   return (
     <div className="space-y-6">
+      <HistoricalFilters city={selectedCity.name} value={historicalFilters} onChange={setHistoricalFilters}/>
       {/* Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">Meteorological Analytics</span>
             <span className="text-slate-600">•</span>
-            <span className="text-xs text-slate-400">ECMWF ERA5 Reanalysis via Open-Meteo API</span>
+            <span className="text-xs text-slate-400">Historical Gold weather annotations</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             <CloudRain className="w-6 h-6 text-cyan-400" />
             <span>Weather & Precipitation Impact</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Empirical investigation of how precipitation, ambient temperature, and relative humidity influence urban traffic speeds across Indian metro corridors.
+            Dataset associations between precipitation, temperature, humidity and corridor congestion; external source provenance is unverified.
           </p>
         </div>
       </div>
@@ -143,7 +147,7 @@ export const WeatherImpact = () => {
           title="Monsoon Congestion Surge"
           value={weatherData?.heavy_rain_surge !== undefined && weatherData?.heavy_rain_surge !== null
             ? `+${weatherData.heavy_rain_surge.toFixed(1)}%`
-            : '0.0%'}
+            : 'Unavailable'}
           icon={CloudRain}
           accentColor="rose"
           description="Precipitation > 15 mm/hr"
@@ -152,7 +156,7 @@ export const WeatherImpact = () => {
           title="Rainfall Correlation (r)"
           value={weatherData?.rain_correlation !== undefined && weatherData?.rain_correlation !== null
             ? `${weatherData.rain_correlation > 0 ? '+' : ''}${weatherData.rain_correlation.toFixed(2)}`
-            : '0.00'}
+            : 'Unavailable'}
           icon={Droplets}
           accentColor="cyan"
           description="Empirical Pearson correlation"
@@ -161,7 +165,7 @@ export const WeatherImpact = () => {
           title="Temperature Sensitivity"
           value={weatherData?.temp_correlation !== undefined && weatherData?.temp_correlation !== null
             ? `${weatherData.temp_correlation.toFixed(2)}`
-            : '0.00'}
+            : 'Unavailable'}
           icon={Thermometer}
           accentColor="amber"
           description="Ambient temperature sensitivity"
@@ -177,6 +181,12 @@ export const WeatherImpact = () => {
       </div>
 
 
+      {weatherData?.reason && <EmptyState title="Insufficient weather observations" message={weatherData.reason} />}
+      <p className="text-xs text-slate-400">Matched traffic/weather observations: {weatherData?.sample_count ?? 0}. Historical source provenance is unverified. User-entered prediction scenarios are hypothetical.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard title="Mean historical humidity" value={weatherData?.humidity_summary ? `${weatherData.humidity_summary.mean}%` : 'Unavailable'} description="Timestamp-matched archive, not current live weather" />
+        <MetricCard title="Mean historical wind" value={weatherData?.wind_summary ? `${weatherData.wind_summary.mean} km/h` : 'Unavailable'} description="Timestamp-matched archive, not a causal effect" />
+      </div>
       {/* Primary Weather Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Precipitation Bands vs Congestion */}

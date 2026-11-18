@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { HistoricalFilters } from '../components/common/HistoricalFilters';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -15,7 +16,11 @@ import {
 } from 'lucide-react';
 
 export const EventImpact = () => {
+  const [historicalFilters,setHistoricalFilters]=useState({});
+  const [eventWindow,setEventWindow]=useState(null);
+  const [windowError,setWindowError]=useState(null);
   const { selectedCity } = useApp();
+  useEffect(()=>{setHistoricalFilters({});},[selectedCity.name]);
   const [eventData, setEventData] = useState(null);
   const [impactData, setImpactData] = useState(null);
   const [filterCategory, setFilterCategory] = useState('all');
@@ -28,8 +33,8 @@ export const EventImpact = () => {
       try {
         setLoading(true);
         const [evRes, impRes] = await Promise.all([
-          api.getEvents(selectedCity.name),
-          api.getEventImpact(selectedCity.name),
+          api.getEvents(selectedCity.name,historicalFilters),
+          api.getEventImpact(selectedCity.name,historicalFilters),
         ]);
         if (isMounted) {
           setEventData(evRes.events || []);
@@ -45,7 +50,7 @@ export const EventImpact = () => {
 
     loadData();
     return () => { isMounted = false; };
-  }, [selectedCity]);
+  }, [selectedCity,historicalFilters]);
 
   if (loading) return <LoadingSpinner label={`Loading event and public holiday records for ${selectedCity.name}...`} />;
   if (error) return <EmptyState title="Event Impact Unavailable" message={error} />;
@@ -56,6 +61,7 @@ export const EventImpact = () => {
 
   return (
     <div className="space-y-6">
+      <HistoricalFilters city={selectedCity.name} value={historicalFilters} onChange={setHistoricalFilters}/>
       {/* Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -69,7 +75,7 @@ export const EventImpact = () => {
             <span>Event & Festival Impact Analysis</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Empirical investigation of how cultural festivals (Durga Puja, Diwali), national holidays, and major sporting matches perturb typical corridor baseline speeds.
+            Compare annotated event days with matched weekday baselines in the supplied dataset. These comparisons do not establish causal event effects.
           </p>
         </div>
 
@@ -103,20 +109,20 @@ export const EventImpact = () => {
         <MetricCard
           title="Festival Congestion Premium"
           value={impactData?.festival_delta !== undefined && impactData?.festival_delta !== null
-            ? `+${impactData.festival_delta.toFixed(1)}%`
-            : '0.0%'}
+            ? `${impactData.festival_delta > 0 ? '+' : ''}${impactData.festival_delta.toFixed(1)} pp`
+            : 'Unavailable'}
           icon={Sparkles}
           accentColor="rose"
-          description="Surge around arterial retail rings"
+          description="Matched weekday baseline difference"
         />
         <MetricCard
           title="National Holiday Delta"
           value={impactData?.holiday_delta !== undefined && impactData?.holiday_delta !== null
             ? `${impactData.holiday_delta > 0 ? '+' : ''}${impactData.holiday_delta.toFixed(1)}%`
-            : '0.0%'}
+            : 'Unavailable'}
           icon={Award}
           accentColor="emerald"
-          description="Reduction in commercial commuter volume"
+          description="Dataset holiday baseline difference"
         />
         <MetricCard
           title="Data Provenance"
@@ -132,7 +138,7 @@ export const EventImpact = () => {
       {impactData && (
         <Card
           title="Congestion Index: Normal Days vs Major Event Days"
-          subtitle="Hourly comparison illustrating morning commuter drop and evening event spikes"
+          subtitle="Hourly dataset averages with matched same-city weekday baseline"
         >
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -167,7 +173,7 @@ export const EventImpact = () => {
       {/* Events Table */}
       <Card
         title={`Catalog Event Records — ${selectedCity.name}`}
-        subtitle="Catalog of 2019 historical event entries and forward-looking 2026 contextual dates"
+        subtitle="Event annotations present in the active analytical database"
       >
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
@@ -191,7 +197,7 @@ export const EventImpact = () => {
                     </Badge>
                   </td>
                   <td className="py-2.5 px-2 font-mono text-slate-300">{ev.event_date}</td>
-                  <td className="py-2.5 px-2 text-slate-400">{ev.venue || 'Metropolitan Wide'}</td>
+                  <td className="py-2.5 px-2 text-slate-400">{ev.venue || 'Unavailable'}</td>
                   <td className="py-2.5 px-2">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
                       ev.is_2026_future
@@ -211,6 +217,11 @@ export const EventImpact = () => {
             </tbody>
           </table>
         </div>
+      </Card>
+      <Card title="Event-day observation windows" subtitle="These are previous/current/following calendar days, not the exact hours or venue footprint of an event.">
+        <select aria-label="Event observation window" className="max-w-full bg-slate-900 border border-slate-700 p-2 text-xs rounded" defaultValue="" onChange={async e=>{setEventWindow(null);setWindowError(null);if(!e.target.value)return;try{setEventWindow(await api.getEventWindow(e.target.value,historicalFilters));}catch(error){setWindowError(error.message);}}}><option value="">Select a catalog event</option>{filteredEvents.map(event=><option key={event.id} value={event.id}>{event.event_date} — {event.event_name}</option>)}</select>
+        {windowError&&<p role="alert" className="text-rose-300">{windowError}</p>}
+        {eventWindow&&<div className="mt-3 text-xs space-y-2"><p>{eventWindow.resolution}. Independent source verification unavailable.</p>{eventWindow.windows.map(w=><p key={w.window}>{w.window.replaceAll('_',' ')} ({w.date}): {w.mean_congestion==null?'Insufficient observations':`${w.mean_congestion}% mean congestion`} · {w.sample_count} rows</p>)}<p>No causal event effect established.</p></div>}
       </Card>
     </div>
   );

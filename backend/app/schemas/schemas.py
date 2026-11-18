@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field, field_validator
 
 # Health
 class HealthResponse(BaseModel):
+    records_count: Optional[int] = None
+    environment: str = "Evaluation"
     status: str
     version: str
     database: str
@@ -12,7 +14,7 @@ class HealthResponse(BaseModel):
 # Overview
 class CityComparisonItem(BaseModel):
     city: str
-    avg_congestion_pct: float
+    avg_congestion_pct: Optional[float] = None
     corridor_count: int
 
 class HourlyTrendItem(BaseModel):
@@ -34,9 +36,11 @@ class WeatherCorrelationItem(BaseModel):
     sample_count: int
 
 class OverviewResponse(BaseModel):
+    network_avg_congestion_pct: Optional[float] = None
+    scope_city: Optional[str] = None
     total_cities: int
     total_locations: int
-    avg_congestion_pct: float
+    avg_congestion_pct: Optional[float] = None
     most_congested_city: str
     total_records_processed: int
     historical_coverage: str
@@ -55,7 +59,7 @@ class CityItem(BaseModel):
     lng: float
     zoom: int
     corridor_count: int
-    avg_congestion_pct: float
+    avg_congestion_pct: Optional[float] = None
 
 class LocationItem(BaseModel):
     id: int
@@ -70,7 +74,7 @@ class LocationItem(BaseModel):
     free_flow_speed_kmh: float
     observed_speed_kmh: Optional[float] = None
     accident_risk_score: float
-    avg_congestion_pct: float
+    avg_congestion_pct: Optional[float] = None
 
 class CityLocationsResponse(BaseModel):
     city: str
@@ -79,11 +83,11 @@ class CityLocationsResponse(BaseModel):
 class CitySummaryResponse(BaseModel):
     city: str
     state: str
-    avg_congestion_pct: float
+    avg_congestion_pct: Optional[float] = None
     congestion_category: str
     peak_hours_str: str
-    peak_hour_congestion_pct: float
-    rain_impact_delta: float
+    peak_hour_congestion_pct: Optional[float] = None
+    rain_impact_delta: Optional[float] = None
     hourly_distribution: List[Dict[str, Any]]
     top_congested_corridors: List[LocationItem]
 
@@ -91,9 +95,9 @@ class LocationTrendsResponse(BaseModel):
     location_code: str
     location_name: str
     corridor_name: str
-    avg_congestion: float
-    peak_hour: int
-    peak_hour_congestion: float
+    avg_congestion: Optional[float] = None
+    peak_hour: Optional[int] = None
+    peak_hour_congestion: Optional[float] = None
     weekend_delta: Optional[float] = None
     rain_delta: Optional[float] = None
     hourly: List[Dict[str, Any]]
@@ -298,11 +302,18 @@ class WeatherResponse(BaseModel):
     source: str = "Open-Meteo ERA5 Reanalysis (Database Archive)"
 
 class WeatherImpactResponse(BaseModel):
+    status: str = "unavailable"
+    reason: Optional[str] = None
+    sample_count: int = 0
+    humidity_summary: Optional[Dict[str, Any]] = None
+    wind_summary: Optional[Dict[str, Any]] = None
+    city_comparison: List[Dict[str, Any]] = Field(default_factory=list)
+    hourly: List[Dict[str, Any]] = Field(default_factory=list)
     city: Optional[str] = None
     location_id: Optional[str] = None
-    heavy_rain_surge: float
-    rain_correlation: float
-    temp_correlation: float
+    heavy_rain_surge: Optional[float] = None
+    rain_correlation: Optional[float] = None
+    temp_correlation: Optional[float] = None
     rain_bands: List[Dict[str, Any]]
     temp_bands: List[Dict[str, Any]]
     source: Optional[str] = "Joined Traffic & Open-Meteo ERA5 Observations"
@@ -320,6 +331,8 @@ class ModelItem(BaseModel):
     is_primary: bool
 
 class ModelPerformanceResponse(BaseModel):
+    evaluation_sample_count: Optional[int] = None
+    evaluation_period: Optional[str] = None
     evaluation_context: str = "Generated demonstration traffic; metrics are not validated real-world forecast accuracy."
     models: List[ModelItem]
     best_model: ModelItem

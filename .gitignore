@@ -83,3 +83,7 @@ ml/artifacts/*.bin
 spark-warehouse/
 metastore_db/
 derby.log
+
+# Derived local analytical stores and manifests; never replace the tracked legacy DB
+data/clearroute_analytics*.db
+data/clearroute_analytics*.manifest.json

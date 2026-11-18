@@ -11,95 +11,26 @@ class AnalyticsService:
         self.repo = DataRepository(db)
         self.db = db
 
-    def get_overview(self) -> Dict[str, Any]:
-        """Calculates multi-city traffic analytical overview directly from database records."""
-        cities = self.repo.get_all_cities()
-        total_cities = len(cities)
-
-        # City-wise comparison using actual traffic averages
-        city_comparison = []
-        city_stats = self.db.query(
-            City.id,
-            City.city_name,
-            func.avg(TrafficRecord.congestion_percentage).label("avg_congestion"),
-            func.count(func.distinct(TrafficRecord.location_id)).label("corridor_count")
-        ).join(Location, Location.city_id == City.id)\
-         .join(TrafficRecord, TrafficRecord.location_id == Location.id)\
-         .group_by(City.id, City.city_name)\
-         .all()
-
-        stats_map = {row.id: (round(float(row.avg_congestion), 1), int(row.corridor_count)) for row in city_stats if row.avg_congestion is not None}
-
-        total_corridors = 0
-        sum_c = 0.0
-        congested_city = "No historical records"
-        max_c = -1.0
-
+    def get_overview(self, city_name=None):
+        from backend.app.services.profile_service import profile
+        data=profile(self.db,city=city_name)
+        cities=self.repo.get_all_cities()
+        city=self.repo.get_city_by_name(city_name) if city_name else None
+        city_comparison=[]
         for c in cities:
-            if c.id in stats_map:
-                avg_val, c_count = stats_map[c.id]
-            else:
-                locs = self.repo.get_locations_by_city_id(c.id)
-                c_count = len(locs)
-                avg_val = 0.0
-            
-            total_corridors += c_count
-            sum_c += avg_val
-            if avg_val > max_c:
-                max_c = avg_val
-                congested_city = c.city_name
-
-            city_comparison.append({
-                "city": c.city_name,
-                "avg_congestion_pct": avg_val,
-                "corridor_count": c_count,
-            })
-
-        # Overall network stats
-        total_traffic = self.db.query(func.count(TrafficRecord.id)).scalar() or 0
-        overall_avg = self.db.query(func.avg(TrafficRecord.congestion_percentage)).scalar()
-        avg_congestion_pct = round(float(overall_avg), 1) if overall_avg is not None else 0.0
-
-        min_ts = self.db.query(func.min(TrafficRecord.timestamp)).scalar()
-        max_ts = self.db.query(func.max(TrafficRecord.timestamp)).scalar()
-        if min_ts and max_ts:
-            coverage_str = f"{min_ts.strftime('%B %d, %Y')} – {max_ts.strftime('%B %d, %Y')}"
-        else:
-            coverage_str = "No historical records"
-
-        # Diurnal 24-hr distribution from database
-        hourly_trend = self.repo.get_hourly_trend_data()
-
-        # Day of week from database
-        weekly_trend = self.repo.get_weekly_trend_data()
-
-        # Monthly from database
-        monthly_trend = self.repo.get_monthly_trend_data()
-
-        # Weather correlation from database
-        weather_metrics = self.repo.get_weather_impact_data()
-        weather_correlation = [
-            {
-                "band": b["band"],
-                "avg_congestion": b["avg_congestion"],
-                "sample_count": b["sample_count"],
-            }
-            for b in weather_metrics["rain_bands"]
-        ]
-
-        return {
-            "total_cities": total_cities,
-            "total_locations": total_corridors,
-            "avg_congestion_pct": avg_congestion_pct,
-            "most_congested_city": congested_city,
-            "total_records_processed": total_traffic,
-            "historical_coverage": coverage_str,
-            "city_comparison": city_comparison,
-            "hourly_trend": hourly_trend,
-            "weekly_trend": weekly_trend,
-            "monthly_trend": monthly_trend,
-            "weather_correlation": weather_correlation,
-        }
+            row=self.db.query(func.avg(TrafficRecord.congestion_percentage),func.count(func.distinct(TrafficRecord.location_id))).join(Location).filter(Location.city_id==c.id).first()
+            city_comparison.append({"city":c.city_name,"avg_congestion_pct":round(float(row[0]),2) if row[0] is not None else None,"corridor_count":row[1]})
+        observed=[r for r in city_comparison if r["avg_congestion_pct"] is not None]
+        days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        dates=[r['key'] for r in data['daily']]
+        network_mean=self.db.query(func.avg(TrafficRecord.congestion_percentage)).scalar()
+        return {"network_avg_congestion_pct":round(float(network_mean),2) if network_mean is not None else None,"scope_city":city_name,"total_cities":len(cities),"total_locations":len(data['corridors']),"avg_congestion_pct":data['mean'],
+                "most_congested_city":max(observed,key=lambda r:r['avg_congestion_pct'])['city'] if observed else 'Unavailable',
+                "total_records_processed":data['sample_count'],"historical_coverage":f"{dates[0]} to {dates[-1]}" if dates else 'No historical records',
+                "city_comparison":city_comparison,"hourly_trend":[{"hour":h,"avg_congestion":next((r['avg_congestion'] for r in data['hourly'] if int(r['key'])==h),None),"is_peak":8<=h<=11 or 17<=h<=21} for h in range(24)],
+                "weekly_trend":[{"day":days[d],"avg_congestion":next((r['avg_congestion'] for r in data['weekly'] if int(r['key'])==d),None)} for d in range(7)],
+                "monthly_trend":[{"month":months[int(r['key'])-1],"avg_congestion":r['avg_congestion']} for r in data['monthly']],
+                "weather_correlation":self.repo.get_weather_impact_data(city_id=city.id if city else None)['rain_bands']}
 
     def get_city_summary(self, city_name: str) -> Dict[str, Any]:
         """Calculates genuine city profile and corridor rankings from database records."""
@@ -112,7 +43,7 @@ class AnalyticsService:
             .join(Location, Location.id == TrafficRecord.location_id)\
             .filter(Location.city_id == city.id)\
             .scalar()
-        avg_congestion = round(float(avg_c_val), 1) if avg_c_val is not None else 0.0
+        avg_congestion = round(float(avg_c_val), 2) if avg_c_val is not None else None
 
         # Peak hours analysis from actual hourly averages
         hourly_rows = self.db.query(
@@ -128,9 +59,9 @@ class AnalyticsService:
             peak_row = hourly_rows[0]
             peak_h = peak_row[0]
             peak_c = round(float(peak_row[1]), 1)
-            peak_hours_str = f"{peak_h:02d}:00 – {(peak_h + 2) % 24:02d}:00 IST"
+            peak_hours_str = f"{peak_h:02d}:00 – {(peak_h + 1) % 24:02d}:00 IST"
         else:
-            peak_hours_str = "18:00 – 20:00 IST"
+            peak_hours_str = "Unavailable"
             peak_c = avg_congestion
 
         # Rain impact in this city
@@ -142,10 +73,12 @@ class AnalyticsService:
 
         # Top congested corridors ranked by actual database average
         corridors = self.repo.get_city_corridors_with_stats(city.id)
-        corridors.sort(key=lambda x: x["avg_congestion_pct"], reverse=True)
+        corridors.sort(key=lambda x: x["avg_congestion_pct"] if x["avg_congestion_pct"] is not None else -1, reverse=True)
 
         # Category
-        if avg_congestion <= 25.0:
+        if avg_congestion is None:
+            category = "Unavailable"
+        elif avg_congestion <= 25.0:
             category = "Low"
         elif avg_congestion <= 50.0:
             category = "Moderate"
@@ -261,6 +194,8 @@ class AnalyticsService:
             loc = self.repo.get_location_by_code(location_id)
             if not loc:
                 raise HTTPException(status_code=404, detail="Unknown corridor")
+            if city_name and loc.city.city_name.lower()!=city_name.lower():
+                raise HTTPException(status_code=400, detail="Corridor does not belong to city")
             if loc:
                 loc_id = loc.id
                 city_id = loc.city_id
@@ -293,6 +228,8 @@ class AnalyticsService:
             loc = self.repo.get_location_by_code(location_id)
             if not loc:
                 raise HTTPException(status_code=404, detail="Unknown corridor")
+            if city_name and loc.city.city_name.lower()!=city_name.lower():
+                raise HTTPException(status_code=400, detail="Corridor does not belong to city")
             if loc:
                 loc_id = loc.id
                 city_id = loc.city_id

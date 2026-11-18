@@ -93,8 +93,13 @@ def test_empty_database_health_and_analytics(tmp_path):
         app.dependency_overrides.clear()
         engine.dispose()
 
-def test_production_pipeline_rejects_demonstration_before_writing():
+def test_production_pipeline_rejects_demonstration_before_writing(tmp_path, monkeypatch):
     from bigdata.spark_jobs.run_pipeline import run_complete_pipeline
+    monkeypatch.chdir(tmp_path)
+    traffic=tmp_path / "data/bronze/uber_movement"
+    traffic.mkdir(parents=True)
+    (traffic/"raw_uber_movement_traffic.csv").write_text("city,location_id,timestamp\n")
+    (traffic/"provenance_metadata.json").write_text(json.dumps({"is_genuine_sensor_data":False}))
     with pytest.raises(RuntimeError,match='demonstration'):
         run_complete_pipeline()
 

@@ -263,7 +263,8 @@ def test_weather_endpoints():
     assert dw_data["city"] == "Delhi"
     assert "2019-12-30" in dw_data["timestamp"]
     assert dw_data["current_context"]["is_live"] is False
-    assert "Open-Meteo ERA5" in dw_data["source"]
+    assert "external provenance unverified" in dw_data["source"]
+    assert dw_data["forecast_scenario"]["precipitation_mm"] is None
 
     # Graceful handling of unknown city
     res_unknown = client.get("/api/weather?city=Atlantis")

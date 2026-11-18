@@ -24,6 +24,10 @@ export const DataExplorer = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [startDate,setStartDate]=useState('');
+  const [endDate,setEndDate]=useState('');
+  const [sort,setSort]=useState('timestamp_desc');
+  const [recordsError,setRecordsError]=useState(null);
   const [filterCity, setFilterCity] = useState('');
   const [searchCorridor, setSearchCorridor] = useState('');
   const [loadingRecords, setLoadingRecords] = useState(false);
@@ -70,21 +74,34 @@ export const DataExplorer = () => {
           location: searchCorridor,
           page: currentPage,
           page_size: pageSize,
+          start_date:startDate||undefined,
+          end_date:endDate||undefined,
+          sort,
         });
         if (isMounted) {
+          setRecordsError(null);
           setRecords(res.records || []);
           setTotalRecords(res.total || 0);
           setTotalPages(res.total_pages || 1);
         }
       } catch (err) {
-        console.error('Error fetching data records:', err);
+        if (isMounted) { setRecordsError(err.message); setRecords([]); }
       } finally {
         if (isMounted) setLoadingRecords(false);
       }
     }
     fetchRecords();
     return () => { isMounted = false; };
-  }, [filterCity, searchCorridor, currentPage, pageSize]);
+  }, [filterCity, searchCorridor, currentPage, pageSize,startDate,endDate,sort]);
+
+  const exportCurrentPage=()=>{
+    if (!records.length) return;
+    const columns=Object.keys(records[0]);
+    const escape=value=>'"'+String(value??'').replaceAll('"','""')+'"';
+    const csv=[columns.map(escape).join(','),...records.map(row=>columns.map(c=>escape(row[c])).join(','))].join('\r\n');
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const link=document.createElement('a');link.href=url;link.download='clearroute_filtered_page.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
 
   const filteredSources = sources.filter((s) =>
     selectedSourceFilter === 'all' ? true : s.category.toLowerCase() === selectedSourceFilter.toLowerCase()
@@ -92,6 +109,13 @@ export const DataExplorer = () => {
 
   return (
     <div className="space-y-6">
+      {recordsError&&<p role="alert" className="text-rose-300">{recordsError}</p>}
+      <div className="flex flex-wrap gap-3 text-xs items-center">
+        <label>Start date <input aria-label="Start date" type="date" className="bg-slate-900 p-2 rounded border border-slate-700" value={startDate} onChange={e=>{setStartDate(e.target.value);setCurrentPage(1);}}/></label>
+        <label>End date <input aria-label="End date" type="date" className="bg-slate-900 p-2 rounded border border-slate-700" value={endDate} onChange={e=>{setEndDate(e.target.value);setCurrentPage(1);}}/></label>
+        <button onClick={exportCurrentPage} disabled={!records.length} className="bg-cyan-900 border border-cyan-700 rounded px-3 py-2 disabled:opacity-40">Export current page CSV</button>
+        <label>Sort <select aria-label="Record sort" className="bg-slate-900 p-2 rounded border border-slate-700" value={sort} onChange={e=>{setSort(e.target.value);setCurrentPage(1);}}><option value="timestamp_desc">Newest first</option><option value="timestamp_asc">Oldest first</option><option value="congestion_desc">Highest congestion</option><option value="congestion_asc">Lowest congestion</option></select></label>
+      </div>
       {/* Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

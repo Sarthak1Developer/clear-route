@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { HistoricalProfile } from '../components/common/HistoricalProfile';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -147,7 +148,7 @@ export const LocationAnalytics = () => {
               </div>
               <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
                 <span>{selectedLocation.location_name}</span>
-                <CongestionBadge percentage={selectedLocation.avg_congestion_pct || selectedLocation.congestion_percentage} />
+                <CongestionBadge percentage={selectedLocation.avg_congestion_pct ?? selectedLocation.congestion_percentage} />
               </h2>
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 font-mono">
                 <span>{selectedLocation.corridor_name}</span>
@@ -164,11 +165,11 @@ export const LocationAnalytics = () => {
               </div>
               <div>
                 <span className="text-slate-500 text-[10px] uppercase font-bold">Lanes</span>
-                <p className="font-mono text-slate-200 font-semibold">{selectedLocation.road_lanes || 4} Carriage Lanes</p>
+                <p className="font-mono text-slate-200 font-semibold">{selectedLocation.road_lanes ?? 'Unavailable'} Carriage Lanes</p>
               </div>
               <div>
                 <span className="text-slate-500 text-[10px] uppercase font-bold">Free Flow Speed</span>
-                <p className="font-mono text-cyan-400 font-semibold">{selectedLocation.free_flow_speed_kmh || 55} km/h</p>
+                <p className="font-mono text-cyan-400 font-semibold">{selectedLocation.free_flow_speed_kmh ?? 'Unavailable'} km/h</p>
               </div>
               <div>
                 <span className="text-slate-500 text-[10px] uppercase font-bold">Accident Risk</span>
@@ -179,7 +180,7 @@ export const LocationAnalytics = () => {
 
           {loadingTrends ? (
             <LoadingSpinner label={`Calculating diurnal and weekly congestion curves for ${selectedLocation.location_name}...`} />
-          ) : trends ? (
+          ) : trends && trends.avg_congestion != null ? (
             <>
               {/* Metric Cards Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -327,6 +328,7 @@ export const LocationAnalytics = () => {
           ) : null}
         </>
       )}
+      <HistoricalProfile city={selectedCity.name} location={selectedLocation?.location_code}/>
     </div>
   );
 };

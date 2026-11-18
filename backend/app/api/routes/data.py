@@ -54,6 +54,7 @@ def get_data_records(
     location: Optional[str] = Query(None, description="Location code or corridor filter"),
     start_date: Optional[str] = Query(None, description="Start date filter YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="End date filter YYYY-MM-DD"),
+    sort: str = Query("timestamp_desc", pattern="^(timestamp_desc|timestamp_asc|congestion_desc|congestion_asc)$"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(25, ge=5, le=200, description="Page size"),
     db: Session = Depends(get_db)
@@ -68,6 +69,7 @@ def get_data_records(
         start_date=start_date,
         end_date=end_date,
         page=page,
-        page_size=page_size
+        page_size=page_size,
+        sort=sort
     )
 

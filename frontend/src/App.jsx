@@ -54,7 +54,7 @@ export const App = () => {
         <Header />
         <main className="flex-1 p-3 sm:p-6 max-w-7xl w-full mx-auto">
           <div role="note" className="mb-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-xs text-amber-200">
-            Traffic records and model benchmarks use generated demonstration data. Real-world congestion and causal weather/event effects are unverified. The application database and Gold dataset contain inconsistent traffic values; compare them separately.
+            Traffic records and model benchmarks use generated demonstration data. Real-world congestion and causal weather/event effects are unverified. Use the reconciled analytical database. The legacy sample is preserved separately; real-world source provenance remains unverified.
           </div>
           <Suspense fallback={<p role="status">Loading analytics page…</p>}>{renderActiveTab()}</Suspense>
         </main>

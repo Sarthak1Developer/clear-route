@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.database.session import get_db, SessionLocal
 from backend.app.repositories.data_repository import DataRepository
@@ -72,6 +72,10 @@ def get_all_events(
     future_flag = is_future if isinstance(is_future, bool) else None
 
     loc_obj = repo.get_location_by_code(loc_id) if loc_id else None
+    if loc_id and not loc_obj:
+        raise HTTPException(404,"Unknown corridor")
+    if loc_obj and city_str and loc_obj.city.city_name.lower()!=city_str.lower():
+        raise HTTPException(400,"Corridor does not belong to city")
     raw_loc_id = loc_obj.id if loc_obj else None
 
     events = repo.get_filtered_events(
@@ -97,7 +101,7 @@ def get_all_events(
             "event_type": ev.event_type,
             "event_date": str(ev.event_date),
             "venue": ev.venue,
-            "expected_attendance": ev.expected_attendance or 0,
+            "expected_attendance": ev.expected_attendance,
             "is_2026_future": ev.is_2026_future,
             "source": source_attr,
             "source_verified": False, # A nonempty attribution is not independent verification.
@@ -138,3 +142,28 @@ def get_events_by_city(
         is_future=is_future,
         db=db
     )
+
+
+@router.get("/events/{event_id}/observations", summary="City-day traffic around an annotated event date")
+def event_observations(event_id: int, location_id: str | None = None, db: Session = Depends(get_db)):
+    import datetime
+    from sqlalchemy import func
+    from backend.app.models.entities import Event,TrafficRecord,Location
+    event=db.query(Event).filter(Event.id==event_id).first()
+    if event is None:raise HTTPException(404,"Event not found")
+    q=db.query(TrafficRecord).join(Location).filter(Location.city_id==event.city_id)
+    if location_id:
+        loc=DataRepository(db).get_location_by_code(location_id)
+        if loc is None:raise HTTPException(404,"Corridor not found")
+        if loc.city_id!=event.city_id:raise HTTPException(400,"Corridor does not belong to event city")
+        q=q.filter(TrafficRecord.location_id==loc.id)
+    windows=[]
+    for offset,label in [(-1,"previous_day"),(0,"event_day"),(1,"following_day")]:
+        date=event.event_date+datetime.timedelta(days=offset)
+        average,count=q.with_entities(func.avg(TrafficRecord.congestion_percentage),func.count()).filter(func.date(TrafficRecord.timestamp)==str(date)).first()
+        windows.append({"window":label,"date":str(date),"mean_congestion":round(float(average),2) if count else None,"sample_count":count})
+    return {"event_id":event.id,"event_name":event.event_name,"city":event.city.city_name,"location_id":location_id,
+        "status":"available" if any(r['sample_count'] for r in windows) else "unavailable",
+        "resolution":"city-day annotation; exact venue radius and start/end times unavailable",
+        "windows":windows,"matched_weekday_delta":DataRepository(db).calculate_event_impact_delta(event,loc.id if location_id else None),
+        "source":event.source_attribution,"source_verified":False,"causal_effect_established":False}

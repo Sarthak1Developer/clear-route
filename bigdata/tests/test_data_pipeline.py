@@ -100,7 +100,7 @@ def test_powerbi_exports_referential_integrity():
     assert os.path.exists(fact_path), "fact_congestion_hourly.csv missing"
 
     df_dim = pd.read_csv(dim_path)
-    df_fact = pd.read_csv(fact_path)
+    df_fact = pd.read_csv(fact_path, usecols=["location_id","hour","is_weekend"])
 
     dim_ids = set(df_dim["location_id"])
     fact_ids = set(df_fact["location_id"])

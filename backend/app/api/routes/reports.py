@@ -70,11 +70,11 @@ def export_dataset(dataset_id: str, db: Session = Depends(get_db)):
 
     elif dataset_id == "model_evaluation":
         writer.writerow(["model_key", "model_name", "algorithm_family", "mae", "rmse", "r2_score", "is_champion"])
-        models = repo.get_all_model_metadata()
-        for m in models:
-            writer.writerow([
-                m.model_key, m.model_name, m.algorithm_family, m.mae, m.rmse, m.r2_score, int(m.is_primary)
-            ])
+        from backend.app.services.inference_service import inference_service
+        models=inference_service.metrics.get("models",{})
+        if not models:raise HTTPException(503,"Model evaluation artifact unavailable")
+        for key,model in models.items():
+            writer.writerow([key,model['name'],model['family'],model['mae'],model['rmse'],model['r2'],int(key==inference_service.metrics.get('best_model'))])
 
     else:
         # Default / gold_master_sample: real traffic records

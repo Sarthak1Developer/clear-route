@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export const Overview = () => {
-  const { setActiveTab, setSelectedCity, cities } = useApp();
+  const { setActiveTab, setSelectedCity, selectedCity, cities } = useApp();
   const [data, setData] = useState(null);
   const [quality, setQuality] = useState(null);
   const [coverage, setCoverage] = useState(null);
@@ -29,10 +29,10 @@ export const Overview = () => {
       try {
         setLoading(true);
         const [overviewRes, qualRes, covRes, locsRes] = await Promise.all([
-          api.getOverview(),
+          api.getOverview(selectedCity.name),
           api.getDataQuality().catch(() => null),
           api.getDataCoverage().catch(() => null),
-          api.searchLocations('', '', 6).catch(() => []),
+          api.searchLocations('', selectedCity.name).catch(() => []),
         ]);
         if (isMounted) {
           setData(overviewRes);
@@ -49,12 +49,14 @@ export const Overview = () => {
     }
     fetchOverviewData();
     return () => { isMounted = false; };
-  }, []);
+  }, [selectedCity.name]);
 
 
   if (loading) return <LoadingSpinner label="Loading multi-city traffic analytical overview..." />;
   if (error) return <EmptyState title="Unable to Load Overview" message={error} reason="Verify backend server connection at http://127.0.0.1:8000." />;
   if (!data) return <EmptyState message="No analytical summary records retrieved from database." />;
+
+  if (data.total_records_processed === 0) return <EmptyState title="Insufficient traffic observations" message="No records exist for the selected city." />;
 
   const getBarColor = (pct) => {
     if (pct > 75) return '#EF4444';
@@ -100,7 +102,7 @@ export const Overview = () => {
           description="Delhi, Mumbai, BLR, HYD, Kolkata"
         />
         <MetricCard
-          title="Monitored Road Corridors"
+          title={`${selectedCity.name} Road Corridors`}
           value={Number.isFinite(data.total_locations) ? data.total_locations : 'N/A'}
           unit="Corridors"
           icon={MapPin}
@@ -109,10 +111,10 @@ export const Overview = () => {
         />
         <MetricCard
           title="Network Avg Congestion"
-          value={Number.isFinite(data.avg_congestion_pct) ? `${data.avg_congestion_pct.toFixed(1)}%` : 'N/A'}
+          value={Number.isFinite(data.network_avg_congestion_pct) ? `${data.network_avg_congestion_pct.toFixed(1)}%` : 'N/A'}
           icon={Gauge}
           accentColor="amber"
-          description={`Highest: ${data.most_congested_city || 'N/A'}`}
+          description={`${selectedCity.name} mean: ${Number.isFinite(data.avg_congestion_pct) ? data.avg_congestion_pct.toFixed(2) + '%' : 'Unavailable'}`}
         />
         <MetricCard
           title="Dataset Temporal Range"
@@ -164,7 +166,7 @@ export const Overview = () => {
 
         {/* Hourly Congestion Distribution */}
         <Card
-          title="Diurnal Hourly Congestion Curve"
+          title={`${selectedCity.name} Hourly Congestion Curve`}
           subtitle="Mean network congestion profile by hour of day (00:00 - 23:00 IST)"
         >
           <div className="h-72 w-full">
@@ -217,7 +219,7 @@ export const Overview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Day-of-Week Pattern */}
         <Card
-          title="Day-of-Week Congestion Variation"
+          title={`${selectedCity.name} Day-of-Week Congestion`}
           subtitle="Weekday commuter volumes vs weekend leisure traffic"
         >
           <div className="h-60 w-full">
@@ -248,7 +250,7 @@ export const Overview = () => {
 
         {/* Monthly Trend 2019 */}
         <Card
-          title="2019 Monthly Progression"
+          title={`${selectedCity.name} Monthly Progression`}
           subtitle="Monthly averages from the application database"
         >
           <div className="h-60 w-full">

@@ -8,7 +8,7 @@ from backend.app.database.session import Base, engine
 from backend.app.api.routes import (
     health, overview, cities, locations,
     predictions, events, weather, models,
-    data, reports
+    data, reports, analytics
 )
 
 # Configure logging
@@ -63,6 +63,7 @@ app.add_middleware(
 )
 
 # Mount API Routers
+app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(health.router, prefix=settings.API_V1_STR)
 app.include_router(overview.router, prefix=settings.API_V1_STR)
 app.include_router(cities.router, prefix=settings.API_V1_STR)

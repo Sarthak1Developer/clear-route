@@ -49,7 +49,7 @@ export const Reports = () => {
     {
       id: 'model_evaluation',
       name: 'Model Benchmark & Evaluation Metrics',
-      description: 'Held-out test set evaluation metrics (MAE, RMSE, R²) comparing all 4 modeling approaches with champion XGBoost weights.',
+      description: 'Held-out test set evaluation metrics (MAE, RMSE, R²) comparing all 4 modeling approaches using the stored evaluation metrics.',
       format: 'JSON / CSV',
       records: '4 Model Architectures',
       layer: 'ML Evaluation Tier',
@@ -68,13 +68,18 @@ export const Reports = () => {
     try {
       setDownloading(datasetId);
       const baseUrl = import.meta.env.VITE_API_URL || '/api';
+      const response = await fetch(`${baseUrl}/reports/export/${encodeURIComponent(datasetId)}`);
+      if (!response.ok) throw new Error(`Export returned HTTP ${response.status}`);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = `${baseUrl}/reports/export/${encodeURIComponent(datasetId)}`;
+      link.href = objectUrl;
       link.setAttribute('download', `clearroute_${datasetId}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast(`Exported clearroute_${datasetId}.csv successfully`, 'success');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      showToast(`CSV prepared; download started for clearroute_${datasetId}.csv`, 'success');
     } catch (err) {
       showToast(`Export failed: ${err.message}`, 'error');
     } finally {
@@ -176,7 +181,7 @@ export const Reports = () => {
             <div>
               <strong>Option A: Import Generated Gold CSV Files (Recommended for Offline Portability)</strong>
               <p className="text-slate-400 text-[11px] mt-0.5">
-                Open Power BI Desktop $\rightarrow$ <em>Get Data</em> $\rightarrow$ <em>Text/CSV</em> $\rightarrow$ Select files from the <code>powerbi/exports/</code> directory. Relationships are automatically linked via <code>location_id</code> and <code>city_code</code>.
+                Open Power BI Desktop $\rightarrow$ <em>Get Data</em> $\rightarrow$ <em>Text/CSV</em> $\rightarrow$ Select files from the <code>powerbi/exports/</code> directory. Define and verify relationships using <code>location_id</code> and <code>city_code</code>.
               </p>
             </div>
           </div>

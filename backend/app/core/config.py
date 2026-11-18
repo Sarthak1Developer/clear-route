@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     ]
 
     # Database
-    DATABASE_URL: str = "postgresql://clearroute_user:clearroute_secure_password@localhost:5432/clearroute_db"
+    DATABASE_URL: str = "sqlite:///data/clearroute_analytics.db"
     DB_FALLBACK_SQLITE: bool = True
-    SQLITE_DB_PATH: str = "data/clearroute_app.db"
+    SQLITE_DB_PATH: str = "data/clearroute_analytics.db"
 
     # Big Data & Storage Directories
     DATA_RAW_DIR: str = "data/raw"

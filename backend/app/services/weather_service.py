@@ -89,7 +89,7 @@ class WeatherService:
                     logger.warning(f"External weather API returned non-200 status: {response.status}")
                     return None
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, Exception) as exc:
-            logger.info(f"External weather provider unreachable ({exc}). Falling back to verified DB records.")
+            logger.info(f"External weather provider unreachable ({exc}). Falling back to dataset records with unverified external provenance.")
             return None
 
     def get_current_and_forecast_weather(
@@ -102,7 +102,7 @@ class WeatherService:
         """
         Retrieves weather records with provenance.
         If an external provider is available and no historical date is forced, returns live conditions.
-        If provider is unreachable or historical date is requested, serves verified DB records.
+        If provider is unreachable or historical date is requested, serves dataset records with unverified external provenance.
         """
         repo = DataRepository(db)
         
@@ -145,11 +145,11 @@ class WeatherService:
                 return {
                     "city": target_city,
                     "location_id": location_id,
-                    "provenance": "Open-Meteo ERA5 Reanalysis (Database Archive)",
+                    "provenance": "Gold weather annotations (external provenance unverified)",
                     "provider_available": False,
                     "provider_status": f"Serving historical archive for {date_str}",
                     "timestamp": matched_record.timestamp.isoformat(),
-                    "source": "Open-Meteo ERA5 Reanalysis (Database Archive)",
+                    "source": "Gold weather annotations (external provenance unverified)",
                     "current_context": {
                         "temperature_c": matched_record.temperature_c,
                         "precipitation_mm": matched_record.precipitation_mm,
@@ -158,11 +158,11 @@ class WeatherService:
                         "weather_condition": matched_record.weather_condition or ("Rain" if matched_record.precipitation_mm > 0.5 else "Clear / Overcast"),
                         "timestamp": matched_record.timestamp.isoformat(),
                         "is_live": False,
-                        "source": "Open-Meteo ERA5 Reanalysis (Database Archive)"
+                        "source": "Gold weather annotations (external provenance unverified)"
                     },
                     "forecast_scenario": {
                         "available": False,
-                        "precipitation_mm": 0.0,
+                        "precipitation_mm": None,
                         "expected_surge_pct": None,
                         "summary": f"Historical record query for {date_str}; forecast not applicable"
                     }
@@ -215,7 +215,7 @@ class WeatherService:
                 }
             }
 
-        # 4. Graceful Fallback: Serve latest verified database record
+        # 4. Graceful Fallback: Serve latest historical dataset record
         latest_record = (
             db.query(WeatherRecord)
             .filter(WeatherRecord.city_id == city_id)
@@ -227,11 +227,11 @@ class WeatherService:
             return {
                 "city": target_city,
                 "location_id": location_id,
-                "provenance": "Open-Meteo ERA5 Reanalysis (Database Archive)",
+                "provenance": "Gold weather annotations (external provenance unverified)",
                 "provider_available": False,
-                "provider_status": "External provider unavailable or offline; serving latest verified historical archive",
+                "provider_status": "External provider unavailable or offline; serving latest historical dataset annotations; external provenance unverified",
                 "timestamp": latest_record.timestamp.isoformat(),
-                "source": "Open-Meteo ERA5 Reanalysis (Database Archive)",
+                "source": "Gold weather annotations (external provenance unverified)",
                 "current_context": {
                     "temperature_c": latest_record.temperature_c,
                     "precipitation_mm": latest_record.precipitation_mm,
@@ -240,13 +240,13 @@ class WeatherService:
                     "weather_condition": latest_record.weather_condition or ("Rain" if latest_record.precipitation_mm > 0.5 else "Clear / Overcast"),
                     "timestamp": latest_record.timestamp.isoformat(),
                     "is_live": False,
-                    "source": "Open-Meteo ERA5 Reanalysis (Database Archive)"
+                    "source": "Gold weather annotations (external provenance unverified)"
                 },
                 "forecast_scenario": {
                     "available": False,
-                    "precipitation_mm": 0.0,
+                    "precipitation_mm": None,
                     "expected_surge_pct": None,
-                    "summary": "External live forecast unavailable without active provider connection; relying on verified historical baseline"
+                    "summary": "External live forecast unavailable without active provider connection; relying on historical dataset context; external provenance unverified"
                 }
             }
 
@@ -311,6 +311,6 @@ class WeatherService:
             "total_records": total,
             "limit": limit,
             "offset": offset,
-            "source": "Open-Meteo ERA5 Reanalysis (Database Archive)",
+            "source": "Gold weather annotations (external provenance unverified)",
             "records": items
         }

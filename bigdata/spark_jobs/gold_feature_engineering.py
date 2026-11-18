@@ -55,16 +55,18 @@ def generate_gold_dataset(
     # 3. Weather Integration (Left join on city, date, hour)
     df_gold = df_silver.merge(df_weather_unique, on=["city", "date", "hour"], how="left")
     
-    # Impute missing weather (if any boundary mismatch) with seasonal corridor medians
-    df_gold["temperature_2m_c"] = df_gold["temperature_2m_c"].fillna(28.0).round(1)
-    df_gold["precipitation_mm"] = df_gold["precipitation_mm"].fillna(0.0).round(1)
-    df_gold["relative_humidity_2m_pct"] = df_gold["relative_humidity_2m_pct"].fillna(65.0).round(1)
-    df_gold["wind_speed_10m_kmh"] = df_gold["wind_speed_10m_kmh"].fillna(12.0).round(1)
+    weather_features=["temperature_2m_c","precipitation_mm","relative_humidity_2m_pct","wind_speed_10m_kmh"]
+    missing_weather=int(df_gold[weather_features].isna().any(axis=1).sum())
+    if missing_weather:
+        raise ValueError(f"{missing_weather} traffic rows have no complete timestamp/city weather match. No dry-weather or temperature substitutes were generated.")
     df_gold["is_raining"] = (df_gold["precipitation_mm"] > 0.5).astype(int)
 
     # 4. Events & Public Holiday Integration (2019 Curated Authentic Records)
     df_events["date"] = df_events["date"].astype(str)
     event_cols = ["city", "date", "event_name", "event_type", "is_holiday", "attendance", "event_intensity", "confidence_score"]
+    missing_event_fields=sorted(set(event_cols)-set(df_events.columns))
+    if missing_event_fields:
+        raise ValueError(f"Event input lacks required model context: {missing_event_fields}. Supply supported observations; no intensity/confidence values were fabricated.")
     df_events_unique = df_events[event_cols].drop_duplicates(subset=["city", "date"])
 
     df_gold = df_gold.merge(df_events_unique, on=["city", "date"], how="left")
@@ -132,9 +134,7 @@ def generate_gold_dataset(
     df_gold.to_parquet(gold_parquet, index=False)
     df_gold.to_csv(gold_csv, index=False)
 
-    # Also update powerbi sample
-    os.makedirs("powerbi/exports", exist_ok=True)
-    df_gold.head(1000).to_csv("powerbi/exports/gold_master_sample.csv", index=False)
+    # BI export is a separate explicit stage; this function never overwrites another output tree.
 
     logger.info(f"Gold Unified Analytical Dataset successfully produced at {gold_parquet} ({len(df_gold)} records, {len(df_gold.columns)} features).")
     return gold_parquet
