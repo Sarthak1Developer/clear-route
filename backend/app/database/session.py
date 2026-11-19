@@ -21,7 +21,7 @@ def resolve_sqlite_url(raw_url: str) -> str:
 
 def get_engine():
     db_url = resolve_sqlite_url(settings.DATABASE_URL)
-    canonical_path = os.path.normpath(os.path.join(PROJECT_ROOT,"data","clearroute_analytics.db"))
+    canonical_path = os.path.normpath(os.path.join(PROJECT_ROOT,"data","clearroute_analytics_v2.db"))
     if db_url.startswith("sqlite:///") and os.path.normcase(db_url[len("sqlite:///"):]) == os.path.normcase(canonical_path) and not os.path.exists(canonical_path):
         from scripts.build_analytics_database import build_database
         build_database(canonical_path)

@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     ]
 
     # Database
-    DATABASE_URL: str = "sqlite:///data/clearroute_analytics.db"
+    DATABASE_URL: str = "sqlite:///data/clearroute_analytics_v2.db"
     DB_FALLBACK_SQLITE: bool = True
-    SQLITE_DB_PATH: str = "data/clearroute_analytics.db"
+    SQLITE_DB_PATH: str = "data/clearroute_analytics_v2.db"
 
     # Big Data & Storage Directories
     DATA_RAW_DIR: str = "data/raw"

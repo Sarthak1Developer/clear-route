@@ -67,7 +67,7 @@ export const WeatherImpact = () => {
             <span>Weather & Precipitation Impact</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Dataset associations between precipitation, temperature, humidity and corridor congestion; external source provenance is unverified.
+            Dataset associations between precipitation, temperature, humidity and corridor congestion. See the source status for historical weather; traffic remains a generated benchmark.
           </p>
         </div>
       </div>
@@ -105,7 +105,7 @@ export const WeatherImpact = () => {
             <div className="flex items-center gap-6">
               <div className="text-right">
                 <span className="text-2xl font-extrabold font-mono text-slate-100">
-                  {cityWeather.current_context?.temperature_c !== undefined ? `${cityWeather.current_context.temperature_c.toFixed(1)}°C` : 'N/A'}
+                  {Number.isFinite(cityWeather.current_context?.temperature_c) ? `${cityWeather.current_context.temperature_c.toFixed(1)}°C` : 'N/A'}
                 </span>
                 <p className="text-[11px] text-slate-400">Ambient Temperature</p>
               </div>
@@ -116,19 +116,19 @@ export const WeatherImpact = () => {
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Precipitation Rate</span>
               <p className="font-mono text-cyan-300 font-bold text-sm mt-0.5">
-                {cityWeather.current_context?.precipitation_mm !== undefined ? `${cityWeather.current_context.precipitation_mm.toFixed(1)} mm/hr` : '0.0 mm/hr'}
+                {Number.isFinite(cityWeather.current_context?.precipitation_mm) ? `${cityWeather.current_context.precipitation_mm.toFixed(1)} mm/hr` : 'Unavailable'}
               </p>
             </div>
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Relative Humidity</span>
               <p className="font-mono text-slate-200 font-bold text-sm mt-0.5">
-                {cityWeather.current_context?.humidity_pct !== undefined ? `${cityWeather.current_context.humidity_pct.toFixed(0)}%` : 'N/A'}
+                {Number.isFinite(cityWeather.current_context?.humidity_pct) ? `${cityWeather.current_context.humidity_pct.toFixed(0)}%` : 'N/A'}
               </p>
             </div>
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Wind Speed</span>
               <p className="font-mono text-slate-200 font-bold text-sm mt-0.5">
-                {cityWeather.current_context?.wind_speed_kmh !== undefined ? `${cityWeather.current_context.wind_speed_kmh.toFixed(1)} km/h` : 'N/A'}
+                {Number.isFinite(cityWeather.current_context?.wind_speed_kmh) ? `${cityWeather.current_context.wind_speed_kmh.toFixed(1)} km/h` : 'N/A'}
               </p>
             </div>
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
@@ -146,11 +146,11 @@ export const WeatherImpact = () => {
         <MetricCard
           title="Monsoon Congestion Surge"
           value={weatherData?.heavy_rain_surge !== undefined && weatherData?.heavy_rain_surge !== null
-            ? `+${weatherData.heavy_rain_surge.toFixed(1)}%`
+            ? `${weatherData.heavy_rain_surge>0?'+':''}${weatherData.heavy_rain_surge.toFixed(1)} pp`
             : 'Unavailable'}
           icon={CloudRain}
           accentColor="rose"
-          description="Precipitation > 15 mm/hr"
+          description="Precipitation ≥ 15 mm/hr"
         />
         <MetricCard
           title="Rainfall Correlation (r)"
@@ -171,18 +171,19 @@ export const WeatherImpact = () => {
           description="Ambient temperature sensitivity"
         />
         <MetricCard
-          title="ERA5 Data Coverage"
-          value="Unverified"
-          unit="Archive"
+          title="Matched historical records"
+          value={weatherData?.sample_count ? weatherData.sample_count.toLocaleString() : 'No records'}
+          unit="Rows"
           icon={Wind}
           accentColor="emerald"
-          description="Historical provenance metadata missing"
+          description="Timestamp-matched records in active database"
         />
       </div>
 
 
+      {weatherData?.heavy_rain_reason&&<p role="note" className="text-xs text-amber-200">{weatherData.heavy_rain_reason} {weatherData.rain_summary?`Maximum rainfall in this scope: ${weatherData.rain_summary.max} mm/hour.`:''}</p>}
       {weatherData?.reason && <EmptyState title="Insufficient weather observations" message={weatherData.reason} />}
-      <p className="text-xs text-slate-400">Matched traffic/weather observations: {weatherData?.sample_count ?? 0}. Historical source provenance is unverified. User-entered prediction scenarios are hypothetical.</p>
+      <p className="text-xs text-slate-400">Matched traffic/weather observations: {weatherData?.sample_count ?? 0}. {weatherData?.weather_provenance?.verified?'ERA5 weather retrieval verified; traffic remains a generated benchmark.':'Historical weather source provenance is unverified.'} User-entered prediction scenarios are hypothetical.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MetricCard title="Mean historical humidity" value={weatherData?.humidity_summary ? `${weatherData.humidity_summary.mean}%` : 'Unavailable'} description="Timestamp-matched archive, not current live weather" />
         <MetricCard title="Mean historical wind" value={weatherData?.wind_summary ? `${weatherData.wind_summary.mean} km/h` : 'Unavailable'} description="Timestamp-matched archive, not a causal effect" />

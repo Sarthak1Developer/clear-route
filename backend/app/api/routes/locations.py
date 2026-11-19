@@ -32,13 +32,13 @@ def search_locations(
     return repo.search_locations(q=query_str, city_filter=city_str, limit=parsed_limit)
 
 @router.get("/locations/{location_id}/trends", response_model=LocationTrendsResponse, summary="Get diurnal and weekly trends for a corridor")
-def get_location_trends(location_id: str, db: Session = Depends(get_db)):
+def get_location_trends(location_id: str, db: Session = Depends(get_db), day_of_week: Optional[int] = Query(None, ge=0, le=6), month: Optional[int] = Query(None, ge=1, le=12)):
     """Retrieves 24-hour diurnal patterns, weekday vs weekend speed deltas, and monthly trends for a corridor."""
     if not isinstance(db, Session):
         db = SessionLocal()
     service = AnalyticsService(db)
     try:
-        return service.get_location_trends(location_id)
+        return service.get_location_trends(location_id, day_of_week=day_of_week if isinstance(day_of_week,int) else None, month=month if isinstance(month,int) else None)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

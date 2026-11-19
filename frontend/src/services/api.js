@@ -53,8 +53,8 @@ export const api = {
     return fetch(`${BASE_URL}/locations/${encodeURIComponent(locationId)}/history?${params.toString()}`).then(handleResponse);
   },
 
-  async getLocationTrends(locationId) {
-    return fetch(`${BASE_URL}/locations/${encodeURIComponent(locationId)}/trends`).then(handleResponse);
+  async getLocationTrends(locationId,filters={}) {
+    return fetch(`${BASE_URL}/locations/${encodeURIComponent(locationId)}/trends?${new URLSearchParams(filters)}`).then(handleResponse);
   },
 
   // Predictions

@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { HourlyDetails } from '../components/common/HourlyDetails';
 import { EmptyState } from '../components/common/EmptyState';
 import { CongestionBadge } from '../components/common/Badge';
 import {
@@ -171,7 +172,7 @@ export const Overview = () => {
         >
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.hourly_trend || []} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+              <AreaChart key={selectedCity.code} data={data.hourly_trend || []} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                 <defs>
                   <linearGradient id="hourCongestion" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.4} />
@@ -215,6 +216,7 @@ export const Overview = () => {
         </Card>
       </div>
 
+      <HourlyDetails scope={`${selectedCity.name} / all city corridors`} rows={data.hourly_trend} valueKey="avg_congestion" count={data.total_records_processed}/>
       {/* Secondary Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Day-of-Week Pattern */}

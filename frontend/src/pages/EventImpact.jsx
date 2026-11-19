@@ -32,6 +32,10 @@ export const EventImpact = () => {
     async function loadData() {
       try {
         setLoading(true);
+        setEventWindow(null);
+        setWindowError(null);
+        setEventData([]);
+        setImpactData(null);
         const [evRes, impRes] = await Promise.all([
           api.getEvents(selectedCity.name,historicalFilters),
           api.getEventImpact(selectedCity.name,historicalFilters),
@@ -52,8 +56,8 @@ export const EventImpact = () => {
     return () => { isMounted = false; };
   }, [selectedCity,historicalFilters]);
 
-  if (loading) return <LoadingSpinner label={`Loading event and public holiday records for ${selectedCity.name}...`} />;
-  if (error) return <EmptyState title="Event Impact Unavailable" message={error} />;
+
+
 
   const filteredEvents = (eventData || []).filter((e) =>
     filterCategory === 'all' ? true : e.event_type.toLowerCase() === filterCategory.toLowerCase()
@@ -62,6 +66,8 @@ export const EventImpact = () => {
   return (
     <div className="space-y-6">
       <HistoricalFilters city={selectedCity.name} value={historicalFilters} onChange={setHistoricalFilters}/>
+      {loading&&<p role="status">Updating event timeline…</p>}
+      {error&&<p role="alert" className="text-rose-300">{error}</p>}
       {/* Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -118,7 +124,7 @@ export const EventImpact = () => {
         <MetricCard
           title="National Holiday Delta"
           value={impactData?.holiday_delta !== undefined && impactData?.holiday_delta !== null
-            ? `${impactData.holiday_delta > 0 ? '+' : ''}${impactData.holiday_delta.toFixed(1)}%`
+            ? `${impactData.holiday_delta > 0 ? '+' : ''}${impactData.holiday_delta.toFixed(1)} pp`
             : 'Unavailable'}
           icon={Award}
           accentColor="emerald"
@@ -126,14 +132,15 @@ export const EventImpact = () => {
         />
         <MetricCard
           title="Data Provenance"
-          value={impactData?.source || 'Gazette & BCCI'}
+          value="Benchmark annotations"
           icon={ShieldCheck}
           accentColor="blue"
-          description="Source claims not independently verified"
+          description="See dataset scope below"
         />
 
       </div>
 
+      <p role="note" className="text-xs text-slate-400 break-words">{impactData?.source}</p>
       {/* Comparison Chart */}
       {impactData && (
         <Card
@@ -209,7 +216,7 @@ export const EventImpact = () => {
                   </td>
                   <td className="py-2.5 px-2">
                     <span className={`font-mono font-semibold ${ev.impact_delta > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {Number.isFinite(ev.impact_delta) ? `${ev.impact_delta > 0 ? '+' : ''}${ev.impact_delta}%` : 'Not observed'}
+                      {Number.isFinite(ev.impact_delta) ? `${ev.impact_delta > 0 ? '+' : ''}${ev.impact_delta} pp` : 'Not observed'}
                     </span>
                   </td>
                 </tr>

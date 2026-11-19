@@ -73,3 +73,29 @@ def get_data_records(
         sort=sort
     )
 
+
+
+@router.get('/data/readiness', summary='Active database, required artifacts and source limitations')
+def data_readiness(db: Session = Depends(get_db)):
+    from pathlib import Path
+    from sqlalchemy import func,inspect,text
+    import json
+    from backend.app.services.inference_service import inference_service
+    from backend.app.services.source_status import weather_source
+    root=Path(__file__).resolve().parents[4]
+    required=['data/gold/master_congestion/gold_master_congestion.parquet','data/external/era5_2019/weather.parquet','data/external/era5_2019/manifest.json','ml/artifacts/preprocessor.joblib','ml/artifacts/metrics.json']
+    required += [f'ml/artifacts/model_{k}.joblib' for k in ['historical_mean','linear_regression','random_forest','xgboost']]
+    files=[{'path':p,'available':(root/p).is_file()} for p in required]
+    counts={'traffic':db.query(TrafficRecord).count(),'weather':db.query(WeatherRecord).count(),'corridors':db.query(Location).count(),'events':db.query(Event).count()}
+    manifest={}
+    if inspect(db.get_bind()).has_table('analytics_manifest'):
+        row=db.execute(text('SELECT payload FROM analytics_manifest WHERE id=1')).scalar()
+        if row:manifest=json.loads(row)
+    loaded=inference_service.get_loaded_models()
+    reconciled=bool(manifest) and counts['traffic']==manifest.get('traffic_rows')
+    return {'status':'ready' if all(f['available'] for f in files) and reconciled and len(loaded)==4 else 'incomplete',
+        'scope':'Academic benchmark application; not independently verified traffic observations',
+        'counts':counts,'gold_reconciled':reconciled,'models_loaded':loaded,'required_files':files,
+        'weather':weather_source(db),'traffic':{'kind':'generated_benchmark','observational_provenance_verified':False},
+        'events':{'kind':'Gold city-day annotations','exact_duration_and_venue_available':False},
+        'limitations':['Traffic is generated benchmark data. Real-world forecasting accuracy is not established.','Event annotations do not establish venue-level or causal effects.','Legacy raw-pipeline inputs lack risk scores, event intensity/confidence and weather provenance; application uses pinned Gold and the verified ERA5 archive.']}

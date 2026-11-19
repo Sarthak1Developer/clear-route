@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { HourlyDetails } from '../components/common/HourlyDetails';
 import { HistoricalProfile } from '../components/common/HistoricalProfile';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -35,6 +36,10 @@ export const LocationAnalytics = () => {
     async function loadCityLocations() {
       try {
         setLoading(true);
+        setTrends(null);
+        setSelectedLocation(null);
+        setSelectedDayFilter('all');
+        setSelectedMonthFilter('all');
         const res = await api.getCityLocations(selectedCity.name);
         const locs = res.locations || [];
         if (isMounted) {
@@ -74,19 +79,21 @@ export const LocationAnalytics = () => {
     async function loadTrends() {
       try {
         setLoadingTrends(true);
-        const res = await api.getLocationTrends(selectedLocation.location_code || selectedLocation.id);
+        setTrends(null);
+        setError(null);
+        const res = await api.getLocationTrends(selectedLocation.location_code || selectedLocation.id,{...(selectedDayFilter!=='all'?{day_of_week:selectedDayFilter}:{}),...(selectedMonthFilter!=='all'?{month:selectedMonthFilter}:{})});
         if (isMounted) {
           setTrends(res);
         }
       } catch (err) {
-        console.error('Error loading trends:', err);
+        if(isMounted){setTrends(null);setError(err.message);}
       } finally {
         if (isMounted) setLoadingTrends(false);
       }
     }
     loadTrends();
     return () => { isMounted = false; };
-  }, [selectedLocation]);
+  }, [selectedLocation,selectedDayFilter,selectedMonthFilter]);
 
   const weeklyChartData = (trends?.weekly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? row.avg_congestion ?? null }));
   const monthlyChartData = (trends?.monthly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? row.avg_congestion ?? null }));
@@ -189,7 +196,7 @@ export const LocationAnalytics = () => {
                   value={Number.isFinite(trends.avg_congestion) ? `${trends.avg_congestion.toFixed(1)}%` : 'N/A'}
                   icon={Compass}
                   accentColor="cyan"
-                  description="Apr - Dec 2019 Mean"
+                  description={selectedMonthFilter==='all'?'Apr–Dec 2019 · selected weekdays':`Month ${selectedMonthFilter}, 2019 · selected weekdays`}
                 />
                 <MetricCard
                   title="Peak Bottleneck Hour"
@@ -201,21 +208,23 @@ export const LocationAnalytics = () => {
                 />
                 <MetricCard
                   title="Weekday vs Weekend Delta"
-                  value={Number.isFinite(trends.weekend_delta) ? `${trends.weekend_delta > 0 ? '+' : ''}${trends.weekend_delta}%` : 'N/A'}
+                  value={Number.isFinite(trends.weekend_delta) ? `${trends.weekend_delta > 0 ? '+' : ''}${trends.weekend_delta} pp` : 'N/A'}
                   icon={Calendar}
                   accentColor="blue"
-                  description="Weekday congestion premium"
+                  description="Weekend minus weekday mean"
                 />
                 <MetricCard
                   title="Precipitation Sensitivity"
-                  value={Number.isFinite(trends.rain_delta) ? `+${trends.rain_delta}%` : 'N/A'}
+                  value={Number.isFinite(trends.rain_delta) ? `${trends.rain_delta>0?'+':''}${trends.rain_delta} pp` : 'N/A'}
                   icon={CloudRain}
                   accentColor="amber"
-                  description="Precipitation > 10mm impact"
+                  description="Precipitation ≥ 15 mm/hr difference"
                 />
               </div>
 
 
+              <div className="flex flex-wrap gap-3 text-xs"><label>Day <select aria-label="Corridor weekday" value={selectedDayFilter} onChange={e=>setSelectedDayFilter(e.target.value)} className="bg-slate-900 border border-slate-700 p-2 rounded"><option value="all">All days</option>{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i)=><option key={i} value={i}>{d}</option>)}</select></label><label>Month <select aria-label="Corridor month" value={selectedMonthFilter} onChange={e=>setSelectedMonthFilter(e.target.value)} className="bg-slate-900 border border-slate-700 p-2 rounded"><option value="all">All months</option>{['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=><option key={m} value={i+4}>{m}</option>)}</select></label></div>
+              <HourlyDetails scope={`${selectedCity.name} / ${selectedLocation.location_name}`} rows={trends.hourly} valueKey="congestion_pct" count={trends.sample_count}/>
               {/* Hourly Trend Chart */}
               <Card
                 title={`${selectedLocation.location_name} — 24-Hour Congestion Pattern`}
@@ -223,7 +232,7 @@ export const LocationAnalytics = () => {
               >
                 <div className="h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={(trends.hourly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? null }))} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                    <AreaChart key={`${selectedCity.code}-${selectedLocation.location_code}-${selectedDayFilter}-${selectedMonthFilter}`} data={(trends.hourly || []).map((row) => ({ ...row, congestion_pct: row.congestion_pct ?? null }))} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                       <defs>
                         <linearGradient id="locHourGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.5} />
@@ -241,7 +250,7 @@ export const LocationAnalytics = () => {
                               <div className="bg-slate-900 border border-slate-700 p-2.5 rounded text-xs shadow-xl">
                                 <p className="font-bold text-slate-100">{d.hour}:00 IST</p>
                                 <p className="text-cyan-400 font-mono mt-1">Mean Congestion: {d.congestion_pct}%</p>
-                                <p className="text-slate-400 text-[10px]">Harmonic Observed Speed: {d.speed_kmh} km/h</p>
+                                <p className="text-slate-400 text-[10px]">Mean Observed Speed: {d.speed_kmh} km/h</p>
                               </div>
                             );
                           }

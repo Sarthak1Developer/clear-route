@@ -1,0 +1,5 @@
+import React from 'react';
+export const HourlyDetails=({scope,rows=[],valueKey,count})=>{
+ const format=v=>Number.isFinite(v)?v.toFixed(2)+'%':'No observations';
+ return <section aria-label="Hourly chart data" className="rounded-lg border border-slate-800 p-3 text-xs text-slate-300 space-y-2"><p><strong>{scope}</strong> · {count?.toLocaleString()??'—'} matched traffic rows · IST</p><p>{[0,9,19].map(h=>`${String(h).padStart(2,'0')}:00 ${format(rows.find(r=>r.hour===h)?.[valueKey])}`).join(' · ')}</p><p className="text-slate-400">The supplied benchmark has similar daily patterns across cities. Values below use the selected scope; similar shapes do not mean identical measurements.</p><details><summary className="cursor-pointer text-cyan-300">Show all 24 hourly values</summary><div className="overflow-auto"><table className="w-full mt-2"><thead><tr><th className="text-left">Hour (IST)</th><th className="text-right">Mean congestion</th></tr></thead><tbody>{rows.map(r=><tr key={r.hour}><td>{String(r.hour).padStart(2,'0')}:00</td><td className="text-right font-mono">{format(r[valueKey])}</td></tr>)}</tbody></table></div></details></section>;
+};

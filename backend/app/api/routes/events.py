@@ -1,3 +1,4 @@
+from backend.app.services.date_filters import validate_date_range
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
@@ -31,6 +32,7 @@ def get_event_impact(
     loc_id = location_id if isinstance(location_id, str) else None
     s_date = start_date if isinstance(start_date, str) else None
     e_date = end_date if isinstance(end_date, str) else None
+    validate_date_range(s_date,e_date)
 
     service = AnalyticsService(db)
     return service.get_event_impact(
@@ -68,6 +70,7 @@ def get_all_events(
     date_str = date if isinstance(date, str) else None
     s_date = start_date if isinstance(start_date, str) else None
     e_date = end_date if isinstance(end_date, str) else None
+    validate_date_range(s_date,e_date)
     ev_type = event_type if isinstance(event_type, str) else None
     future_flag = is_future if isinstance(is_future, bool) else None
 

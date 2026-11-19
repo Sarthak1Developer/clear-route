@@ -92,6 +92,10 @@ class CitySummaryResponse(BaseModel):
     top_congested_corridors: List[LocationItem]
 
 class LocationTrendsResponse(BaseModel):
+    city: str = ""
+    sample_count: int = 0
+    status: str = "available"
+    filters: Dict[str, Any] = {}
     location_code: str
     location_name: str
     corridor_name: str
@@ -302,6 +306,9 @@ class WeatherResponse(BaseModel):
     source: str = "Open-Meteo ERA5 Reanalysis (Database Archive)"
 
 class WeatherImpactResponse(BaseModel):
+    weather_provenance: Optional[Dict[str, Any]] = None
+    rain_summary: Optional[Dict[str, Any]] = None
+    heavy_rain_reason: Optional[str] = None
     status: str = "unavailable"
     reason: Optional[str] = None
     sample_count: int = 0

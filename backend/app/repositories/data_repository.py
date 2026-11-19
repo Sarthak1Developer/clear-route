@@ -1,3 +1,4 @@
+from backend.app.services.source_status import weather_source
 import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
@@ -300,7 +301,7 @@ class DataRepository:
             query = query.filter(WeatherRecord.city_id == city_id)
         return query.order_by(desc(WeatherRecord.timestamp)).first()
 
-    def get_weather_impact_data(self, city_id=None, location_id=None, start_date=None, end_date=None):
+    def get_weather_impact_data(self, city_id=None, location_id=None, start_date=None, end_date=None, day_of_week=None, month=None):
         import pandas as pd
         query=self.db.query(TrafficRecord.congestion_percentage,TrafficRecord.observed_speed_kmh,
             WeatherRecord.precipitation_mm,WeatherRecord.temperature_c,WeatherRecord.humidity_pct,
@@ -309,6 +310,8 @@ class DataRepository:
         elif city_id is not None:query=query.filter(Location.city_id==city_id)
         if start_date:query=query.filter(func.date(TrafficRecord.timestamp)>=start_date)
         if end_date:query=query.filter(func.date(TrafficRecord.timestamp)<=end_date)
+        if day_of_week is not None:query=query.filter(TrafficRecord.day_of_week==day_of_week)
+        if month is not None:query=query.filter(TrafficRecord.month==month)
         frame=pd.DataFrame(query.all(),columns=['congestion','speed','rain','temperature','humidity','wind','hour','city'])
         def corr(column):
             if len(frame)<3 or frame[column].nunique()<2 or frame.congestion.nunique()<2:return None
@@ -326,11 +329,13 @@ class DataRepository:
         dry,heavy=bands[0]['avg_congestion'],bands[-1]['avg_congestion']
         return {'heavy_rain_surge':round(heavy-dry,2) if dry is not None and heavy is not None else None,
             'rain_correlation':corr('rain'),'temp_correlation':corr('temperature'),'rain_bands':bands,'temp_bands':temps,
+            'rain_summary':summary('rain'),'heavy_rain_reason':None if heavy is not None and dry is not None else 'No heavy-rain samples (>=15 mm/hour) or dry baseline in the selected scope; no effect can be estimated.',
             'humidity_summary':summary('humidity'),'wind_summary':summary('wind'),'sample_count':len(frame),
             'status':'available' if len(frame) else 'unavailable','reason':None if len(frame) else 'Insufficient weather observations matched to traffic timestamps.',
             'city_comparison':[{'city':city,'mean_congestion':round(float(rows.congestion.mean()),2),'mean_rainfall_mm':round(float(rows.rain.mean()),2),'sample_count':len(rows)} for city,rows in frame.groupby('city')],
             'hourly':[{'hour':int(hour),'mean_congestion':round(float(rows.congestion.mean()),2),'rainfall_mm':round(float(rows.rain.mean()),2),'sample_count':len(rows)} for hour,rows in frame.groupby('hour')],
-            'source':'Timestamp/city-joined database observations; historical source provenance unverified. Associations are not causal effects.'}
+            'weather_provenance':weather_source(self.db),
+            'source':'City-hour joined traffic benchmark and weather records. Associations are not causal effects.'}
 
     # -------------------------------------------------------------------------
     # Events & Public Holidays

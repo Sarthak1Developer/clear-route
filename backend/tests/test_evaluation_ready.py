@@ -107,3 +107,59 @@ def test_health_counts_the_active_database(canonical):
     result=client.get('/api/health').json()
     assert result['records_count']==165000
     assert len(result['models_loaded'])==4
+
+
+def test_hourly_curves_reconcile_for_every_city_and_corridor(canonical):
+    client,_=canonical
+    gold=pd.read_parquet('data/gold/master_congestion/gold_master_congestion.parquet')
+    curves=[]
+    for city,rows in gold.groupby('city'):
+        result=client.get('/api/overview',params={'city':city}).json()
+        expected=rows.groupby('hour').congestion_percentage.mean()
+        assert all(abs(r['avg_congestion']-expected[r['hour']])<=.0051 for r in result['hourly_trend'])
+        curves.append(tuple(r['avg_congestion'] for r in result['hourly_trend']))
+    assert len(set(curves))==5
+    for code,rows in gold.groupby('location_id'):
+        result=client.get(f'/api/locations/{code}/trends').json()
+        assert result['sample_count']==6600
+        expected=rows.groupby('hour').congestion_percentage.mean()
+        assert all(abs(r['congestion_pct']-expected[r['hour']])<=.0051 for r in result['hourly'])
+
+
+def test_corridor_month_weekday_filters_and_invalid_values(canonical):
+    client,_=canonical
+    gold=pd.read_parquet('data/gold/master_congestion/gold_master_congestion.parquet')
+    result=client.get('/api/locations/DEL_001/trends?month=7&day_of_week=0').json()
+    rows=gold[(gold.location_id=='DEL_001')&(gold.month==7)&(gold.day_of_week==0)]
+    assert result['sample_count']==len(rows)
+    assert abs(result['avg_congestion']-rows.congestion_percentage.mean())<=.0051
+    assert client.get('/api/locations/DEL_001/trends?month=13').status_code==422
+    assert client.get('/api/locations/DEL_001/trends?day_of_week=7').status_code==422
+
+
+def test_event_timeline_and_invalid_ranges(canonical):
+    client,_=canonical
+    result=client.get('/api/events?city=Delhi&start_date=2019-10-01&end_date=2019-10-31').json()
+    assert len(result['events'])==2
+    assert all('2019-10' in e['event_date'] for e in result['events'])
+    assert client.get('/api/events?city=Delhi&start_date=2030-01-01').json()['events']==[]
+    for route in ['/api/events','/api/events/impact','/api/weather/impact']:
+        assert client.get(route+'?start_date=2019-12-31&end_date=2019-01-01').status_code==422
+        assert client.get(route+'?start_date=bad').status_code==422
+
+
+def test_verified_era5_archive_and_readiness(canonical):
+    import json,gzip
+    client,_=canonical
+    base=Path('data/external/era5_2019')
+    meta=json.loads((base/'manifest.json').read_text())
+    assert hashlib.sha256((base/'weather.parquet').read_bytes()).hexdigest()==meta['parquet_sha256']
+    assert hashlib.sha256(gzip.decompress((base/'response.json.gz').read_bytes())).hexdigest()==meta['raw_response_sha256']
+    result=client.get('/api/data/readiness').json()
+    assert result['status']=='ready'
+    assert result['weather']['verified'] is True
+    assert result['traffic']['observational_provenance_verified'] is False
+    archive=pd.read_parquet(base/'weather.parquet')
+    response=client.get('/api/weather/history?city=Delhi&limit=1').json()['records'][0]
+    expected=archive[(archive.city=='Delhi')&(archive.timestamp==pd.Timestamp(response['timestamp']))].iloc[0]
+    assert response['precipitation_mm']==expected.precipitation_mm

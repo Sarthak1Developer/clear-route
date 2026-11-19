@@ -1,8 +1,8 @@
-# Evaluation branch — 18 November 2026
+# Evaluation branch — 20 November 2026
 
-Run `python scripts/run_local.py` to start the reconciled backend. It creates a new ignored `data/clearroute_analytics.db` from checked-in Gold and preserves `data/clearroute_app.db`. Then run `npm ci --prefix frontend` and `npm run dev --prefix frontend`.
+Run `python scripts/run_local.py` to start the reconciled backend. It creates a new ignored `data/clearroute_analytics_v2.db` from checked-in Gold and preserves `data/clearroute_app.db`. Then run `npm ci --prefix frontend` and `npm run dev --prefix frontend`.
 
-The default prediction action compares all four existing models on identical inputs. Gold contains 165,000 benchmark rows; external observational provenance remains unverified. Raw pipeline rebuilding is blocked by missing source fields and weather provenance. See `docs/audit/EVALUATION_REPORT.md` for validation and limitations, and `docs/setup/evaluation_deployment.md` for deployment requirements. Older production claims below are not verified.
+The default prediction action compares all four existing models on identical inputs. Gold contains 165,000 benchmark rows; external observational provenance remains unverified. The application now includes 33,000 retrieved ERA5 weather records, the compressed API response and a checksum manifest in `data/external/era5_2019`. Legacy raw-pipeline inputs still lack source fields/provenance; they are preserved separately and are not the active weather source. See `docs/audit/NOV20_FIXES.md` for the current verification. See `docs/audit/EVALUATION_REPORT.md` for validation and limitations, and `docs/setup/evaluation_deployment.md` for deployment requirements. Older production claims below are not verified.
 
 ---
 

@@ -5,7 +5,7 @@ from backend.app.models.entities import TrafficRecord, Location, City
 from backend.app.repositories.data_repository import DataRepository
 from fastapi import HTTPException
 
-def profile(db, city=None, location=None, start_date=None, end_date=None):
+def profile(db, city=None, location=None, start_date=None, end_date=None, day_of_week=None, month=None):
     repo=DataRepository(db)
     city_obj=repo.get_city_by_name(city) if city else None
     loc=repo.get_location_by_code(location) if location else None
@@ -17,6 +17,8 @@ def profile(db, city=None, location=None, start_date=None, end_date=None):
     if loc:q=q.filter(TrafficRecord.location_id==loc.id)
     if start_date:q=q.filter(func.date(TrafficRecord.timestamp)>=start_date)
     if end_date:q=q.filter(func.date(TrafficRecord.timestamp)<=end_date)
+    if day_of_week is not None:q=q.filter(TrafficRecord.day_of_week==day_of_week)
+    if month is not None:q=q.filter(TrafficRecord.month==month)
     count=q.count()
     values=[r[0] for r in q.with_entities(TrafficRecord.congestion_percentage).all()]
     avg=lambda xs: round(sum(xs)/len(xs),2) if xs else None

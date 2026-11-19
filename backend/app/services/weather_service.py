@@ -1,3 +1,4 @@
+from backend.app.services.source_status import weather_source
 import os
 import json
 import logging
@@ -145,11 +146,11 @@ class WeatherService:
                 return {
                     "city": target_city,
                     "location_id": location_id,
-                    "provenance": "Gold weather annotations (external provenance unverified)",
+                    "provenance": weather_source(db)["label"],
                     "provider_available": False,
                     "provider_status": f"Serving historical archive for {date_str}",
                     "timestamp": matched_record.timestamp.isoformat(),
-                    "source": "Gold weather annotations (external provenance unverified)",
+                    "source": weather_source(db)["label"],
                     "current_context": {
                         "temperature_c": matched_record.temperature_c,
                         "precipitation_mm": matched_record.precipitation_mm,
@@ -158,7 +159,7 @@ class WeatherService:
                         "weather_condition": matched_record.weather_condition or ("Rain" if matched_record.precipitation_mm > 0.5 else "Clear / Overcast"),
                         "timestamp": matched_record.timestamp.isoformat(),
                         "is_live": False,
-                        "source": "Gold weather annotations (external provenance unverified)"
+                        "source": weather_source(db)["label"]
                     },
                     "forecast_scenario": {
                         "available": False,
@@ -227,11 +228,11 @@ class WeatherService:
             return {
                 "city": target_city,
                 "location_id": location_id,
-                "provenance": "Gold weather annotations (external provenance unverified)",
+                "provenance": weather_source(db)["label"],
                 "provider_available": False,
                 "provider_status": "External provider unavailable or offline; serving latest historical dataset annotations; external provenance unverified",
                 "timestamp": latest_record.timestamp.isoformat(),
-                "source": "Gold weather annotations (external provenance unverified)",
+                "source": weather_source(db)["label"],
                 "current_context": {
                     "temperature_c": latest_record.temperature_c,
                     "precipitation_mm": latest_record.precipitation_mm,
@@ -240,7 +241,7 @@ class WeatherService:
                     "weather_condition": latest_record.weather_condition or ("Rain" if latest_record.precipitation_mm > 0.5 else "Clear / Overcast"),
                     "timestamp": latest_record.timestamp.isoformat(),
                     "is_live": False,
-                    "source": "Gold weather annotations (external provenance unverified)"
+                    "source": weather_source(db)["label"]
                 },
                 "forecast_scenario": {
                     "available": False,
@@ -311,6 +312,6 @@ class WeatherService:
             "total_records": total,
             "limit": limit,
             "offset": offset,
-            "source": "Gold weather annotations (external provenance unverified)",
+            "source": weather_source(db)["label"],
             "records": items
         }

@@ -13,6 +13,7 @@ export const Header = () => {
           <Building2 className="w-4 h-4 text-cyan-400" />
           <span className="text-xs text-slate-400 font-medium">City:</span>
           <select
+            aria-label="Active city"
             value={selectedCity.code}
             onChange={(e) => {
               const city = cities.find((c) => c.code === e.target.value);
