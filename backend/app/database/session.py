@@ -21,6 +21,12 @@ def resolve_sqlite_url(raw_url: str) -> str:
 
 def get_engine():
     db_url = resolve_sqlite_url(settings.DATABASE_URL)
+    canonical_path = os.path.normpath(os.path.join(PROJECT_ROOT,"data","clearroute_analytics_v2.db"))
+    if db_url.startswith("sqlite:///") and os.path.normcase(db_url[len("sqlite:///"):]) == os.path.normcase(canonical_path) and not os.path.exists(canonical_path):
+        from scripts.build_analytics_database import build_database
+        build_database(canonical_path)
+    if db_url.startswith("sqlite:///") and os.path.normcase(db_url[len("sqlite:///"):]) == os.path.normcase(canonical_path) and not os.path.exists(os.path.splitext(canonical_path)[0]+".manifest.json"):
+        raise RuntimeError("Analytical database has no build manifest; refusing an incomplete or unverified build.")
     is_sqlite = db_url.startswith("sqlite")
     connect_args = {"check_same_thread": False} if is_sqlite else {"connect_timeout": 3}
     
@@ -43,6 +49,9 @@ def get_engine():
                 f"Database connection failed ({e}). Falling back to SQLite for local development: {sqlite_path}"
             )
             os.makedirs(os.path.dirname(sqlite_path), exist_ok=True)
+            if os.path.normcase(sqlite_path) == os.path.normcase(canonical_path) and not os.path.exists(sqlite_path):
+                from scripts.build_analytics_database import build_database
+                build_database(sqlite_path)
             sqlite_url = f"sqlite:///{sqlite_path}"
             return create_engine(sqlite_url, connect_args={"check_same_thread": False})
         raise e

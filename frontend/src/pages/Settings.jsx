@@ -16,7 +16,7 @@ export const Settings = () => {
     defaultCityCode: settings.defaultCityCode || 'DEL',
     defaultModel: settings.defaultModel || 'xgboost',
     temperatureUnit: settings.temperatureUnit || 'C',
-    refreshInterval: settings.refreshInterval || 30,
+    refreshInterval: settings.refreshInterval ?? 30,
     toastEnabled: settings.toastEnabled ?? true,
     mapZoom: settings.mapZoom || 12,
   });
@@ -82,7 +82,7 @@ export const Settings = () => {
           <div className="text-xl font-bold text-white font-mono mb-1">
             {healthStatus.online ? 'Online (200 OK)' : 'Offline / Standby'}
           </div>
-          <p className="text-xs text-slate-400 font-mono">v{healthStatus.details?.version || '1.0.0'} · 127.0.0.1:8000</p>
+          <p className="text-xs text-slate-400 font-mono">v{healthStatus.details?.version || '1.0.0'} · Configured API endpoint</p>
         </div>
 
         {/* Database */}
@@ -95,7 +95,7 @@ export const Settings = () => {
             {healthStatus.details?.database || 'PostgreSQL / SQLite'}
           </div>
           <p className="text-xs text-slate-400 font-mono">
-            {healthStatus.details?.records_count?.toLocaleString() || '6,000'} traffic records
+            {healthStatus.details?.records_count?.toLocaleString() ?? 'Unavailable'} traffic records
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export const Settings = () => {
             {modelsCount} / 4 Loaded
           </div>
           <p className="text-xs text-slate-400 font-mono truncate" title={modelsLoadedList.join(', ')}>
-            {modelsLoadedList.length > 0 ? modelsLoadedList.join(', ') : 'All 4 Models Loaded'}
+            {modelsLoadedList.length > 0 ? modelsLoadedList.join(', ') : 'No loaded models reported'}
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export const Settings = () => {
             <ShieldCheck className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-xl font-bold text-white font-mono mb-1">
-            {healthStatus.details?.environment || 'Production'}
+            {healthStatus.details?.environment || 'Unavailable'}
           </div>
           <p className="text-xs text-slate-400 font-mono">2026 Context Isolation</p>
         </div>
@@ -149,25 +149,6 @@ export const Settings = () => {
                 ))}
               </select>
               <p className="text-[11px] text-slate-500">Initial city focused when launching analytics.</p>
-            </div>
-
-            {/* Default Model Architecture */}
-            <div className="space-y-2">
-              <label className="block text-slate-300 font-semibold flex items-center gap-1.5">
-                <Cpu className="w-4 h-4 text-cyan-400" />
-                <span>Default ML Model Architecture</span>
-              </label>
-              <select
-                value={formState.defaultModel}
-                onChange={(e) => setFormState({ ...formState, defaultModel: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-medium font-mono"
-              >
-                <option value="xgboost">XGBoost Regressor (Champion)</option>
-                <option value="random_forest">Random Forest Regressor</option>
-                <option value="linear_regression">Linear Regression (Ridge)</option>
-                <option value="historical_mean">Historical Mean Baseline</option>
-              </select>
-              <p className="text-[11px] text-slate-500">Pre-selected estimator on the Prediction page.</p>
             </div>
 
             {/* Temperature Units */}

@@ -29,8 +29,9 @@ def test_bronze_layer_outputs():
         "data/bronze/uber_movement/raw_uber_movement_traffic.csv",
     ]
     missing = [path for path in expected_inputs if not os.path.exists(path)]
-    if missing:
+    if len(missing) == len(expected_inputs):
         pytest.skip("Bronze ingestion inputs are not present in this checkout; run the ingestion pipeline first: " + ", ".join(missing))
+    assert not missing, "Incomplete Bronze inputs: " + ", ".join(missing)
     assert os.path.exists("data/bronze/weather_era5/raw_weather_era5_hourly.csv"), "Bronze weather CSV missing"
     assert os.path.exists("data/bronze/weather_era5/provenance_metadata.json"), "Weather provenance JSON missing"
     assert os.path.exists("data/bronze/osm_infrastructure/raw_osm_road_segments.csv"), "Bronze OSM CSV missing"
@@ -99,7 +100,7 @@ def test_powerbi_exports_referential_integrity():
     assert os.path.exists(fact_path), "fact_congestion_hourly.csv missing"
 
     df_dim = pd.read_csv(dim_path)
-    df_fact = pd.read_csv(fact_path)
+    df_fact = pd.read_csv(fact_path, usecols=["location_id","hour","is_weekend"])
 
     dim_ids = set(df_dim["location_id"])
     fact_ids = set(df_fact["location_id"])

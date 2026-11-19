@@ -1,3 +1,4 @@
+from backend.app.services.date_filters import validate_date_range
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
@@ -68,6 +69,7 @@ def get_weather_history(
     loc_id = location_id if isinstance(location_id, str) else None
     s_date = start_date if isinstance(start_date, str) else None
     e_date = end_date if isinstance(end_date, str) else None
+    validate_date_range(s_date,e_date)
     d_exact = date if isinstance(date, str) else None
 
     service = WeatherService(db)
@@ -104,6 +106,7 @@ def get_weather_impact(
     loc_id = location_id if isinstance(location_id, str) else None
     s_date = start_date if isinstance(start_date, str) else None
     e_date = end_date if isinstance(end_date, str) else None
+    validate_date_range(s_date,e_date)
 
     service = AnalyticsService(db)
     return service.get_weather_impact(

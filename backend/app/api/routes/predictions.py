@@ -1,6 +1,9 @@
 import datetime
 import json
 import logging
+from functools import lru_cache
+from pathlib import Path
+import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.database.session import get_db
@@ -18,6 +21,32 @@ logger = logging.getLogger("clearroute.routes.predictions")
 
 router = APIRouter(tags=["Predictions"])
 
+@lru_cache(maxsize=1)
+def corridor_lengths():
+    path=Path(__file__).resolve().parents[4]/"data/gold/master_congestion/gold_master_congestion.parquet"
+    if not path.exists():
+        return {}
+    frame=pd.read_parquet(path,columns=["location_id","length_m"])
+    return frame.groupby("location_id").length_m.first().to_dict()
+
+def resolve_temporal(req):
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
+    try:
+        date = datetime.date.fromisoformat(req.prediction_date) if req.prediction_date else now.date()
+        clock = datetime.datetime.strptime(req.prediction_time, "%H:%M").time() if req.prediction_time else None
+        if clock and req.hour is not None and req.hour != clock.hour:
+            raise ValueError("hour conflicts with prediction_time")
+        if req.prediction_date and req.day_of_week is not None and req.day_of_week != date.weekday():
+            raise ValueError("day_of_week conflicts with prediction_date")
+        if req.prediction_date and req.month is not None and req.month != date.month:
+            raise ValueError("month conflicts with prediction_date")
+        hour = clock.hour if clock else (req.hour if req.hour is not None else 12)
+        dow = req.day_of_week if req.day_of_week is not None else date.weekday()
+        month = req.month if req.month is not None else date.month
+        return datetime.datetime.combine(date, datetime.time(hour)), date.isoformat(), (clock.strftime("%H:%M") if clock else f"{hour:02d}:00"), hour, dow, month
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid temporal input: {exc}")
+
 @router.post("/predict", response_model=PredictionResponse, summary="Execute forward-looking congestion inference using serialized ML models")
 def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
     """
@@ -29,25 +58,9 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
     if not loc:
         raise HTTPException(status_code=404, detail=f"Location corridor '{req.location_id}' not found.")
 
-    # Parse temporal features
-    prediction_date = req.prediction_date
-    prediction_time = req.prediction_time
-    if prediction_date and prediction_time:
-        try:
-            dt = datetime.datetime.strptime(prediction_date, "%Y-%m-%d")
-            day_of_week = dt.weekday() if req.day_of_week is None else req.day_of_week
-            month = dt.month if req.month is None else req.month
-            hour = int(prediction_time.split(":")[0]) if req.hour is None else req.hour
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid date or time format: {e}")
-    else:
-        now = datetime.datetime.now()
-        dt = now
-        day_of_week = req.day_of_week if req.day_of_week is not None else 0
-        month = req.month if req.month is not None else now.month
-        hour = req.hour if req.hour is not None else 12
-        prediction_date = prediction_date or now.strftime("%Y-%m-%d")
-        prediction_time = prediction_time or f"{hour:02d}:00"
+    if loc.city.city_name != req.city:
+        raise HTTPException(status_code=400, detail="Selected corridor does not belong to the requested city.")
+    dt, prediction_date, prediction_time, hour, day_of_week, month = resolve_temporal(req)
 
     # Validate model selection
     valid_models = ["historical_mean", "linear_regression", "random_forest", "xgboost"]
@@ -64,7 +77,9 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
     lanes = req.road_lanes if req.road_lanes is not None else getattr(loc, "road_lanes", 4)
     rtype = req.road_type if req.road_type is not None else getattr(loc, "road_type", "primary")
     ff_speed = req.free_flow_speed_kmh if req.free_flow_speed_kmh is not None else getattr(loc, "free_flow_speed_kmh", 60.0)
-    length = req.length_m if req.length_m is not None else getattr(loc, "length_m", 3000.0)
+    length = req.length_m if req.length_m is not None else corridor_lengths().get(loc.location_code)
+    if length is None:
+        raise HTTPException(status_code=503, detail="Corridor length unavailable in analytical feature store")
     risk_score = req.accident_risk_score if req.accident_risk_score is not None else getattr(loc, "accident_risk_score", 0.5)
 
     # Run dedicated ML inference service
@@ -104,11 +119,11 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         logger.error(f"Prediction failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Inference execution failed: {e}")
+        raise HTTPException(status_code=500, detail="Inference execution failed. See server logs.")
 
     # Persist prediction record in database
     try:
-        repo.save_prediction({
+        saved = repo.save_prediction({
             "location_id": loc.id,
             "prediction_date": dt.date() if hasattr(dt, "date") else datetime.date.today(),
             "prediction_hour": hour,
@@ -120,11 +135,14 @@ def predict_congestion(req: PredictionRequest, db: Session = Depends(get_db)):
             "predicted_congestion_pct": pred_result["predicted_congestion_pct"],
             "congestion_category": pred_result["congestion_category"],
             "baseline_congestion_pct": pred_result["historical_baseline_pct"],
-            "shap_attribution_json": json.dumps(pred_result["shap_attributions"]),
+            "shap_attribution_json": json.dumps({"model_id": model_type, "model_name": pred_result["model_name"], "model_version": pred_result["model_version"], "predicted_congestion": pred_result["predicted_congestion_pct"], "congestion_category": pred_result["congestion_category"], "base_value": pred_result["base_value"], "additive_check": pred_result["additive_check"], "category_impacts": pred_result["category_impacts"] or {}, "feature_contributions": pred_result["feature_contributions"] or [], "feature_values": pred_result["input_features"], "explanation_summary": pred_result["explanation_summary"], "limitations_and_caveats": pred_result["limitations_and_caveats"] or []}),
         })
     except Exception as e:
-        logger.warning(f"Could not persist prediction record: {e}")
+        db.rollback()
+        logger.warning("Could not persist prediction record", exc_info=True)
+        raise HTTPException(status_code=503, detail="Prediction could not be saved. Retry later.")
 
+    pred_result["prediction_id"] = str(saved.id) if "saved" in locals() else pred_result["prediction_id"]
     return pred_result
 
 
@@ -134,6 +152,13 @@ def compare_congestion_models(req: PredictionRequest, db: Session = Depends(get_
     Runs each available estimator against the exact same validated scenario.
     Individual model failures are reported explicitly; no substitute prediction is generated.
     """
+    repo = DataRepository(db)
+    location = repo.get_location_by_code_or_id(req.location_id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Unknown corridor")
+    if location.city.city_name != req.city:
+        raise HTTPException(status_code=400, detail="Corridor does not belong to selected city")
+    resolve_temporal(req)
     model_keys = ["xgboost", "random_forest", "linear_regression", "historical_mean"]
     results = []
     for model_key in model_keys:
@@ -141,17 +166,23 @@ def compare_congestion_models(req: PredictionRequest, db: Session = Depends(get_
             results.append({
                 "model": model_key,
                 "status": "unavailable",
+                "available": False,
+                "explanation_available": False,
+                "metrics": inference_service.get_model_info(model_key),
                 "error": f"Model '{model_key}' or its required preprocessing artifact is not loaded."
             })
             continue
         try:
             model_request = req.model_copy(update={"model_type": model_key})
             result = predict_congestion(model_request, db)
-            results.append({"model": model_key, "status": "success", "result": result})
+            results.append({"model": model_key, "status": "success", "available": True, "metrics": inference_service.get_model_info(model_key), "explanation_available": bool(result.get("feature_contributions")), "result": result})
         except HTTPException as exc:
             results.append({
                 "model": model_key,
                 "status": "error",
+                "available": True,
+                "explanation_available": False,
+                "metrics": inference_service.get_model_info(model_key),
                 "error": str(exc.detail),
                 "http_status": exc.status_code
             })
@@ -183,21 +214,9 @@ def explain_congestion_prediction(req: PredictionRequest, db: Session = Depends(
     if not loc:
         raise HTTPException(status_code=404, detail=f"Location corridor '{req.location_id}' not found.")
 
-    prediction_date = req.prediction_date
-    prediction_time = req.prediction_time
-    if prediction_date and prediction_time:
-        try:
-            dt = datetime.datetime.strptime(prediction_date, "%Y-%m-%d")
-            day_of_week = dt.weekday() if req.day_of_week is None else req.day_of_week
-            month = dt.month if req.month is None else req.month
-            hour = int(prediction_time.split(":")[0]) if req.hour is None else req.hour
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid date or time format: {e}")
-    else:
-        now = datetime.datetime.now()
-        day_of_week = req.day_of_week if req.day_of_week is not None else 0
-        month = req.month if req.month is not None else now.month
-        hour = req.hour if req.hour is not None else 12
+    if loc.city.city_name != req.city:
+        raise HTTPException(status_code=400, detail="Selected corridor does not belong to the requested city.")
+    dt, prediction_date, prediction_time, hour, day_of_week, month = resolve_temporal(req)
 
     valid_models = ["historical_mean", "linear_regression", "random_forest", "xgboost"]
     model_type = req.model_type or "xgboost"
@@ -212,7 +231,9 @@ def explain_congestion_prediction(req: PredictionRequest, db: Session = Depends(
     lanes = req.road_lanes if req.road_lanes is not None else getattr(loc, "road_lanes", 4)
     rtype = req.road_type if req.road_type is not None else getattr(loc, "road_type", "primary")
     ff_speed = req.free_flow_speed_kmh if req.free_flow_speed_kmh is not None else getattr(loc, "free_flow_speed_kmh", 60.0)
-    length = req.length_m if req.length_m is not None else getattr(loc, "length_m", 3000.0)
+    length = req.length_m if req.length_m is not None else corridor_lengths().get(loc.location_code)
+    if length is None:
+        raise HTTPException(status_code=503, detail="Corridor length unavailable in analytical feature store")
     risk_score = req.accident_risk_score if req.accident_risk_score is not None else getattr(loc, "accident_risk_score", 0.5)
 
     is_peak = (8 <= hour <= 11) or (17 <= hour <= 21)
@@ -258,7 +279,7 @@ def explain_congestion_prediction(req: PredictionRequest, db: Session = Depends(
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Explanation failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to generate SHAP explanation: {e}")
+        raise HTTPException(status_code=500, detail="Explanation unavailable. See server logs.")
 
 @router.get("/predictions/{prediction_id}/explain", response_model=PredictionExplanationResponse, summary="Retrieve individual SHAP explanation for a persisted prediction")
 def get_prediction_explanation_by_id(prediction_id: str, db: Session = Depends(get_db)):
@@ -267,25 +288,10 @@ def get_prediction_explanation_by_id(prediction_id: str, db: Session = Depends(g
     if not pred:
         raise HTTPException(status_code=404, detail="Prediction not found")
 
-    loc = db.query(Location).filter(Location.id == pred.location_id).first()
-    loc_code = loc.location_code if loc else "LOC_001"
-    city_name = loc.city.city_name if loc and loc.city else "Delhi"
-
-    dow = pred.prediction_date.weekday() if pred.prediction_date else 0
-    features = {
-        "city": city_name,
-        "location_id": loc_code,
-        "hour": pred.prediction_hour,
-        "day_of_week": dow,
-        "month": pred.prediction_date.month if pred.prediction_date else 11,
-        "temperature_2m_c": pred.temperature_c,
-        "precipitation_mm": pred.precipitation_mm,
-        "event_present": 1 if pred.event_present else 0,
-    }
-    try:
-        return inference_service.explain_prediction(features, model_key=pred.model_type, prediction_id=f"pred_rec_{pred.id}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve SHAP explanation: {e}")
+    stored = json.loads(pred.shap_attribution_json or "null")
+    if isinstance(stored, dict) and "feature_values" in stored:
+        return {**stored, "prediction_id": str(pred.id)}
+    raise HTTPException(status_code=409, detail="Exact explanation inputs were not retained for this legacy record; submit the original scenario to /api/predict/explain.")
 
 @router.get("/predictions/{prediction_id}", summary="Retrieve stored prediction record by ID")
 def get_prediction_by_id(prediction_id: str, db: Session = Depends(get_db)):

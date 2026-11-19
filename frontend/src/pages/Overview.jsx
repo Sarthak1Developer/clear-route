@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { HourlyDetails } from '../components/common/HourlyDetails';
 import { EmptyState } from '../components/common/EmptyState';
 import { CongestionBadge } from '../components/common/Badge';
 import {
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const Overview = () => {
-  const { setActiveTab, setSelectedCity, cities } = useApp();
+  const { setActiveTab, setSelectedCity, selectedCity, cities } = useApp();
   const [data, setData] = useState(null);
   const [quality, setQuality] = useState(null);
   const [coverage, setCoverage] = useState(null);
@@ -29,10 +30,10 @@ export const Overview = () => {
       try {
         setLoading(true);
         const [overviewRes, qualRes, covRes, locsRes] = await Promise.all([
-          api.getOverview(),
+          api.getOverview(selectedCity.name),
           api.getDataQuality().catch(() => null),
           api.getDataCoverage().catch(() => null),
-          api.searchLocations('', '', 6).catch(() => []),
+          api.searchLocations('', selectedCity.name).catch(() => []),
         ]);
         if (isMounted) {
           setData(overviewRes);
@@ -49,12 +50,14 @@ export const Overview = () => {
     }
     fetchOverviewData();
     return () => { isMounted = false; };
-  }, []);
+  }, [selectedCity.name]);
 
 
   if (loading) return <LoadingSpinner label="Loading multi-city traffic analytical overview..." />;
   if (error) return <EmptyState title="Unable to Load Overview" message={error} reason="Verify backend server connection at http://127.0.0.1:8000." />;
   if (!data) return <EmptyState message="No analytical summary records retrieved from database." />;
+
+  if (data.total_records_processed === 0) return <EmptyState title="Insufficient traffic observations" message="No records exist for the selected city." />;
 
   const getBarColor = (pct) => {
     if (pct > 75) return '#EF4444';
@@ -77,7 +80,7 @@ export const Overview = () => {
             Indian Metropolitan Congestion Intelligence
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Multi-factor predictive analytics combining historical Uber Movement corridor speeds, Open-Meteo ERA5 weather reanalysis, official MoRTH accident contexts, and cultural event dynamics.
+            Explore generated traffic benchmarks alongside weather and event context. Observational validity and causal effects have not been established.
           </p>
         </div>
         <button
@@ -100,19 +103,19 @@ export const Overview = () => {
           description="Delhi, Mumbai, BLR, HYD, Kolkata"
         />
         <MetricCard
-          title="Monitored Road Corridors"
+          title={`${selectedCity.name} Road Corridors`}
           value={Number.isFinite(data.total_locations) ? data.total_locations : 'N/A'}
           unit="Corridors"
           icon={MapPin}
           accentColor="blue"
-          description="Zenodo Uber Movement TAZ Segments"
+          description="Configured demonstration corridors"
         />
         <MetricCard
           title="Network Avg Congestion"
-          value={Number.isFinite(data.avg_congestion_pct) ? `${data.avg_congestion_pct.toFixed(1)}%` : 'N/A'}
+          value={Number.isFinite(data.network_avg_congestion_pct) ? `${data.network_avg_congestion_pct.toFixed(1)}%` : 'N/A'}
           icon={Gauge}
           accentColor="amber"
-          description={`Highest: ${data.most_congested_city || 'N/A'}`}
+          description={`${selectedCity.name} mean: ${Number.isFinite(data.avg_congestion_pct) ? data.avg_congestion_pct.toFixed(2) + '%' : 'Unavailable'}`}
         />
         <MetricCard
           title="Dataset Temporal Range"
@@ -164,12 +167,12 @@ export const Overview = () => {
 
         {/* Hourly Congestion Distribution */}
         <Card
-          title="Diurnal Hourly Congestion Curve"
+          title={`${selectedCity.name} Hourly Congestion Curve`}
           subtitle="Mean network congestion profile by hour of day (00:00 - 23:00 IST)"
         >
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.hourly_trend || []} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+              <AreaChart key={selectedCity.code} data={data.hourly_trend || []} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                 <defs>
                   <linearGradient id="hourCongestion" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.4} />
@@ -213,11 +216,12 @@ export const Overview = () => {
         </Card>
       </div>
 
+      <HourlyDetails scope={`${selectedCity.name} / all city corridors`} rows={data.hourly_trend} valueKey="avg_congestion" count={data.total_records_processed}/>
       {/* Secondary Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Day-of-Week Pattern */}
         <Card
-          title="Day-of-Week Congestion Variation"
+          title={`${selectedCity.name} Day-of-Week Congestion`}
           subtitle="Weekday commuter volumes vs weekend leisure traffic"
         >
           <div className="h-60 w-full">
@@ -248,8 +252,8 @@ export const Overview = () => {
 
         {/* Monthly Trend 2019 */}
         <Card
-          title="2019 Monthly Progression"
-          subtitle="April – December 2019 seasonal progression (Monsoon surge)"
+          title={`${selectedCity.name} Monthly Progression`}
+          subtitle="Monthly averages from the application database"
         >
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -382,7 +386,7 @@ export const Overview = () => {
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Gold Records</span>
                   <p className="text-cyan-400 font-mono font-bold mt-0.5">
-                    {quality?.total_gold_records?.toLocaleString() || '184,500'}
+                    {quality?.total_gold_records?.toLocaleString() ?? 'Unavailable'}
                   </p>
                 </div>
               </div>
@@ -391,7 +395,7 @@ export const Overview = () => {
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Completeness Rate</span>
                   <p className="text-emerald-400 font-mono font-bold mt-0.5">
-                    {(quality?.completeness_rate || 99.4).toFixed(1)}% verified
+                    {(quality?.completeness_rate ?? 0).toFixed(1)}% verified
                   </p>
                 </div>
                 <div className="text-right">
@@ -412,7 +416,7 @@ export const Overview = () => {
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Corridors</span>
                   <p className="text-blue-400 font-mono font-bold mt-0.5">
-                    {coverage?.corridors_total || 25} segments
+                    {coverage?.corridors_total ?? 0} segments
                   </p>
                 </div>
               </div>

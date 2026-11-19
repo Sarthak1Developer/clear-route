@@ -1,576 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
-import { api } from '../services/api';
-import { Card, MetricCard } from '../components/common/Card';
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { EmptyState } from '../components/common/EmptyState';
-import { CongestionBadge } from '../components/common/Badge';
-import {
-  BarChart, Bar, ResponsiveContainer, XAxis, YAxis,
-  CartesianGrid, Tooltip, Cell, ReferenceLine
-} from 'recharts';
-import {
-  Sparkles, Calendar, Clock, CloudRain, Wind,
-  Thermometer, MapPin, Gauge, AlertTriangle, ArrowRight,
-  TrendingUp, HelpCircle, Layers, CheckCircle2
-} from 'lucide-react';
+import React, {useEffect, useState} from 'react';
+import {useApp} from '../context/AppContext';
+import {api} from '../services/api';
+import {Card} from '../components/common/Card';
+import {LoadingSpinner} from '../components/common/LoadingSpinner';
+import {BarChart,Bar,ResponsiveContainer,XAxis,YAxis,Tooltip,CartesianGrid} from 'recharts';
 
-export const CongestionPrediction = () => {
-  const { cities, selectedCity, setSelectedCity, showToast, settings } = useApp();
-  const [locations, setLocations] = useState([]);
-  const [selectedLocationId, setSelectedLocationId] = useState('');
-  const [loadingLocations, setLoadingLocations] = useState(false);
-
-  // Form Inputs
-  const [predictionDate, setPredictionDate] = useState('2026-11-05');
-  const [predictionHour, setPredictionHour] = useState(18); // 18:00 IST
-  const [modelType, setModelType] = useState(settings?.defaultModel || 'xgboost'); // historical_mean, linear_regression, random_forest, xgboost
-
-  const [temperature, setTemperature] = useState(28.0);
-  const [precipitation, setPrecipitation] = useState(12.5);
-  const [humidity, setHumidity] = useState(75.0);
-  const [windSpeed, setWindSpeed] = useState(14.0);
-  const [eventPresent, setEventPresent] = useState(true);
-  const [eventName, setEventName] = useState('Major Cultural & Commercial Assembly');
-
-  // Prediction Output State
-  const [predicting, setPredicting] = useState(false);
-  const [predictionResult, setPredictionResult] = useState(null);
-  const [predictionError, setPredictionError] = useState(null);
-  const [comparisonResult, setComparisonResult] = useState(null);
-  const [comparingModels, setComparingModels] = useState(false);
-
-  // Fetch locations when city changes
-  useEffect(() => {
-    let isMounted = true;
-    async function loadCityLocations() {
-      try {
-        setLoadingLocations(true);
-        const res = await api.getCityLocations(selectedCity.name);
-        const locs = res.locations || [];
-        if (isMounted) {
-          setLocations(locs);
-          if (locs.length > 0) {
-            setSelectedLocationId(locs[0].location_code || locs[0].id);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching city locations:', err);
-      } finally {
-        if (isMounted) setLoadingLocations(false);
-      }
-    }
-    loadCityLocations();
-    return () => { isMounted = false; };
-  }, [selectedCity]);
-
-  // Handle Predict Submission
-  const handlePredict = async (e) => {
-    e.preventDefault();
-    if (!selectedLocationId) {
-      showToast('Please select a corridor for prediction', 'error');
-      return;
-    }
-
-    try {
-      setPredicting(true);
-      setPredictionError(null);
-
-      const payload = {
-        city: selectedCity.name,
-        location_id: selectedLocationId,
-        prediction_date: predictionDate,
-        prediction_time: `${String(predictionHour).padStart(2, '0')}:00`,
-        model_type: modelType,
-        temperature_c: Number(temperature),
-        precipitation_mm: Number(precipitation),
-        humidity_pct: Number(humidity),
-        wind_speed_kmh: Number(windSpeed),
-        event_present: Boolean(eventPresent),
-        event_name: eventPresent ? eventName : '',
-      };
-
-      const result = await api.predictCongestion(payload);
-      setPredictionResult(result);
-      showToast('Prediction inference completed successfully', 'success');
-    } catch (err) {
-      setPredictionError(err.message);
-      showToast(err.message, 'error');
-    } finally {
-      setPredicting(false);
-    }
-  };
-
-
-  const handleCompareModels = async () => {
-    if (!selectedLocationId) {
-      showToast('Please select a corridor for comparison', 'error');
-      return;
-    }
-    try {
-      setComparingModels(true);
-      setComparisonResult(null);
-      setPredictionError(null);
-      const payload = {
-        city: selectedCity.name,
-        location_id: selectedLocationId,
-        prediction_date: predictionDate,
-        prediction_time: `${String(predictionHour).padStart(2, '0')}:00`,
-        model_type: modelType,
-        temperature_c: Number(temperature),
-        precipitation_mm: Number(precipitation),
-        humidity_pct: Number(humidity),
-        wind_speed_kmh: Number(windSpeed),
-        event_present: Boolean(eventPresent),
-        event_name: eventPresent ? eventName : '',
-      };
-      const result = await api.compareCongestionModels(payload);
-      setComparisonResult(result);
-      showToast(`Model comparison completed: ${result.models_succeeded}/${result.models_requested} models succeeded`, result.models_succeeded === result.models_requested ? 'success' : 'error');
-    } catch (err) {
-      setPredictionError(err.message);
-      showToast(err.message, 'error');
-    } finally {
-      setComparingModels(false);
-    }
-  };
-
-  const selectedLocObj = locations.find((l) => (l.location_code || l.id) == selectedLocationId);
-
-  return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">Multi-Factor Inference</span>
-            <span className="text-slate-600">•</span>
-            <span className="text-xs text-slate-400">Independent 2026 Context Pipeline</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-cyan-400" />
-            <span>Congestion Prediction & SHAP Attribution</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Simulate forward-looking 2026 scenarios using serialized ML estimators without retraining. Model explains feature contributions with SHAP TreeExplainer.
-          </p>
+const MODELS=[['xgboost','XGBoost'],['random_forest','Random Forest'],['linear_regression','Linear Regression'],['historical_mean','Historical Mean']];
+const number=(value,digits=2)=>Number.isFinite(value)?value.toFixed(digits):'Unavailable';
+const inputClass='w-full min-w-0 rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-100';
+export const CongestionPrediction=()=>{
+  const {cities,selectedCity,setSelectedCity}=useApp();
+  const [locations,setLocations]=useState([]);
+  const [form,setForm]=useState({location_id:'',prediction_date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),hour:18,temperature_c:28,precipitation_mm:0,humidity_pct:65,wind_speed_kmh:12,event_present:false,event_name:''});
+  const [result,setResult]=useState(null),[error,setError]=useState(null),[loading,setLoading]=useState(false),[locationLoading,setLocationLoading]=useState(false);
+  useEffect(()=>{
+    let current=true;setResult(null);setError(null);setLocations([]);setLocationLoading(true);
+    setForm(f=>({...f,location_id:''}));
+    api.getCityLocations(selectedCity.name).then(data=>{if(current){setLocations(data.locations);setForm(f=>({...f,location_id:data.locations[0]?.location_code||''}));}}).catch(e=>current&&setError(e.message)).finally(()=>current&&setLocationLoading(false));
+    return()=>{current=false;};
+  },[selectedCity.name]);
+  const change=(name,value)=>{setForm(f=>({...f,[name]:value}));setResult(null);};
+  async function predict(event){
+    event.preventDefault();setLoading(true);setError(null);setResult(null);
+    const {hour,...fields}=form;
+    try{setResult(await api.compareCongestionModels({...fields,city:selectedCity.name,prediction_time:`${String(hour).padStart(2,'0')}:00`,event_name:form.event_present?form.event_name:null}));}
+    catch(e){setError(e.message);}finally{setLoading(false);}
+  }
+  const predictions=(result?.results||[]).filter(r=>r.status==='success').map(r=>({model:MODELS.find(m=>m[0]===r.model)?.[1]||r.model,value:r.result.predicted_congestion_pct}));
+  const spread=predictions.length>1?Math.max(...predictions.map(r=>r.value))-Math.min(...predictions.map(r=>r.value)):null;
+  return <div className="space-y-6">
+    <header><h1 className="text-2xl font-bold">Congestion Prediction — Four-Model Comparison</h1><p className="text-sm text-slate-400 mt-2">One hypothetical scenario, four existing estimators. Benchmark accuracy does not establish real-world forecasting validity.</p></header>
+    <Card title="Scenario parameters" subtitle="Time is IST. Weather and event values below are hypothetical inputs, not retrieved observations.">
+      <form onSubmit={predict} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <label className="text-xs space-y-2"><span>City</span><select aria-label="Prediction city" className={inputClass} value={selectedCity.code} onChange={e=>setSelectedCity(cities.find(c=>c.code===e.target.value))}>{cities.map(c=><option key={c.code} value={c.code}>{c.name}</option>)}</select></label>
+          <label className="text-xs space-y-2"><span>Road corridor</span><select aria-label="Road corridor" className={inputClass} required disabled={locationLoading} value={form.location_id} onChange={e=>change('location_id',e.target.value)}><option value="">{locationLoading?'Loading corridors…':'Select corridor'}</option>{locations.map(l=><option key={l.location_code} value={l.location_code}>{l.location_name} — {l.corridor_name}</option>)}</select></label>
+          <label className="text-xs space-y-2"><span>Date</span><input aria-label="Prediction date" type="date" required className={inputClass} value={form.prediction_date} onChange={e=>change('prediction_date',e.target.value)}/></label>
+          <label className="text-xs space-y-2"><span>Hour (IST)</span><select aria-label="Prediction hour" className={inputClass} value={form.hour} onChange={e=>change('hour',Number(e.target.value))}>{Array.from({length:24},(_,h)=><option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}</select></label>
+          {[['precipitation_mm','Rainfall (mm/hour)',0,150],['temperature_c','Temperature (C)',-20,60],['humidity_pct','Humidity (%)',0,100],['wind_speed_kmh','Wind speed (km/h)',0,150]].map(([name,label,min,max])=><label key={name} className="text-xs space-y-2"><span>{label}</span><input type="number" required step="0.1" min={min} max={max} className={inputClass} value={form[name]} onChange={e=>change(name,Number(e.target.value))}/></label>)}
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Prediction Input Form (5 cols) */}
-        <div className="lg:col-span-5 bg-[#111827] border border-slate-800 rounded-xl p-5 shadow-lg">
-          <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wider mb-4 pb-2 border-b border-slate-800 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <span>Scenario Parameters</span>
-          </h3>
-
-          <form onSubmit={handlePredict} className="space-y-4 text-xs">
-            {/* City Selector */}
-            <div>
-              <label className="block text-slate-400 font-medium mb-1">Target Metropolitan City</label>
-              <select
-                value={selectedCity.code}
-                onChange={(e) => {
-                  const c = cities.find((ci) => ci.code === e.target.value);
-                  if (c) setSelectedCity(c);
-                }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-medium"
-              >
-                {cities.map((c) => (
-                  <option key={c.code} value={c.code}>{c.name} ({c.state})</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Location Selector */}
-            <div>
-              <label className="block text-slate-400 font-medium mb-1">Supported Road Corridor</label>
-              <select
-                value={selectedLocationId}
-                onChange={(e) => setSelectedLocationId(e.target.value)}
-                disabled={loadingLocations || locations.length === 0}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-medium truncate"
-              >
-                {locations.map((loc) => (
-                  <option key={loc.id || loc.location_code} value={loc.location_code || loc.id}>
-                    {loc.location_name} ({loc.corridor_name})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Date & Hour Row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-400 font-medium mb-1 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Date (2026 Context)</span>
-                </label>
-                <input
-                  type="date"
-                  value={predictionDate}
-                  onChange={(e) => setPredictionDate(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-medium mb-1 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Hour of Day (IST)</span>
-                </label>
-                <select
-                  value={predictionHour}
-                  onChange={(e) => setPredictionHour(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-mono"
-                >
-                  {Array.from({ length: 24 }).map((_, h) => (
-                    <option key={h} value={h}>{String(h).padStart(2, '0')}:00 {h >= 8 && h <= 11 ? '(AM Peak)' : h >= 17 && h <= 21 ? '(PM Peak)' : ''}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Model Architecture Selector */}
-            <div>
-              <label className="block text-slate-400 font-medium mb-1 flex items-center justify-between">
-                <span>Model Architecture</span>
-                <span className="text-[10px] text-cyan-400 font-mono">Exactly 4 Approaches</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'xgboost', label: 'XGBoost (Primary)', desc: 'Gradient Boosted Trees' },
-                  { id: 'random_forest', label: 'Random Forest', desc: 'Non-linear Ensemble' },
-                  { id: 'linear_regression', label: 'Linear Regression', desc: 'Interpretable Baseline' },
-                  { id: 'historical_mean', label: 'Historical Mean', desc: 'Naive Statistical Baseline' },
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setModelType(m.id)}
-                    className={`p-2 rounded-lg border text-left transition-all ${
-                      modelType === m.id
-                        ? 'bg-cyan-950/40 border-cyan-500 text-cyan-200'
-                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="font-semibold text-[11px] truncate">{m.label}</div>
-                    <div className="text-[9px] text-slate-500 truncate">{m.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Weather Scenario Sliders */}
-            <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-3">
-              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                Meteorological Scenario (Open-Meteo Inputs)
-              </span>
-
-              {/* Rain Slider */}
-              <div>
-                <div className="flex justify-between text-slate-400 text-[11px] mb-1">
-                  <span className="flex items-center gap-1">
-                    <CloudRain className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Rainfall / Precipitation</span>
-                  </span>
-                  <span className="font-mono text-cyan-300 font-bold">{precipitation} mm/hr</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="60"
-                  step="0.5"
-                  value={precipitation}
-                  onChange={(e) => setPrecipitation(parseFloat(e.target.value))}
-                  className="w-full accent-cyan-500"
-                />
-              </div>
-
-              {/* Temperature Slider */}
-              <div>
-                <div className="flex justify-between text-slate-400 text-[11px] mb-1">
-                  <span className="flex items-center gap-1">
-                    <Thermometer className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Temperature</span>
-                  </span>
-                  <span className="font-mono text-amber-300 font-bold">{temperature}°C</span>
-                </div>
-                <input
-                  type="range"
-                  min="10"
-                  max="48"
-                  step="0.5"
-                  value={temperature}
-                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full accent-amber-500"
-                />
-              </div>
-
-              {/* Wind & Humidity Grid */}
-              <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                <div>
-                  <span className="text-slate-400 block mb-1">Humidity (%)</span>
-                  <input
-                    type="number"
-                    min="10"
-                    max="100"
-                    value={humidity}
-                    onChange={(e) => setHumidity(parseFloat(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <span className="text-slate-400 block mb-1">Wind (km/h)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="80"
-                    value={windSpeed}
-                    onChange={(e) => setWindSpeed(parseFloat(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Event Scenario Toggle */}
-            <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                  Major Event / Assembly
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={eventPresent}
-                    onChange={(e) => setEventPresent(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
-                </label>
-              </div>
-
-              {eventPresent && (
-                <input
-                  type="text"
-                  placeholder="Event name (e.g. Cricket Match / Durga Puja)..."
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 placeholder-slate-500 text-[11px]"
-                />
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={predicting}
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
-            >
-              {predicting ? (
-                <>
-                  <LoadingSpinner className="p-0 !text-slate-950" label="" />
-                  <span>Evaluating Serialized Model...</span>
-                </>
-              ) : (
-                <>
-                  <span>Calculate Congestion & SHAP Breakdown</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-            <button type="button" onClick={handleCompareModels} disabled={predicting || comparingModels || !selectedLocationId}
-              className="w-full border border-cyan-700 text-cyan-300 hover:bg-cyan-950/40 font-semibold py-2.5 px-4 rounded-xl text-xs disabled:opacity-50">
-              {comparingModels ? 'Comparing all available models...' : 'Compare All 4 Models'}
-            </button>
-          </form>
-        </div>
-
-        {/* Prediction Results & SHAP Explanations (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          {comparisonResult && (
-            <div className="bg-[#111827] border border-slate-800 rounded-xl p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <h3 className="text-sm font-bold text-white">Four-Model Scenario Comparison</h3>
-                <span className="text-xs text-slate-400">{comparisonResult.models_succeeded}/{comparisonResult.models_requested} models returned predictions</span>
-              </div>
-              <p className="text-xs text-slate-400 mb-3">Best model by stored held-out evaluation: <strong className="text-cyan-300">{comparisonResult.best_model_by_held_out_metrics || 'Not established'}</strong>. This benchmark ranking does not guarantee the best result for an individual scenario.</p>
-              <div className="space-y-2">
-                {comparisonResult.results.map((item) => (
-                  <div key={item.model} className="flex items-center justify-between gap-3 border-b border-slate-800 py-2 last:border-0">
-                    <span className="text-xs text-slate-300 font-mono">{item.model}</span>
-                    {item.status === 'success' ? <span className="text-sm font-bold text-cyan-300">{Number(item.result.predicted_congestion_pct).toFixed(1)}%</span> : <span className="text-xs text-rose-400">{item.status}: {item.error || 'Unavailable'}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {predicting ? (
-            <div className="h-full flex items-center justify-center bg-[#111827] border border-slate-800 rounded-xl p-12">
-              <LoadingSpinner label="Running tree-based inference and computing SHAP TreeExplainer local values..." />
-            </div>
-          ) : predictionError ? (
-            <EmptyState
-              title="Inference Error"
-              message={predictionError}
-              reason="Ensure backend is running and model artifacts are generated in ml/artifacts/."
-            />
-          ) : predictionResult ? (
-            <>
-              {/* Prediction Summary Header */}
-              <div className="bg-[#111827] border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-wider font-semibold">
-                        {predictionResult.model_name || predictionResult.selected_model.toUpperCase()}
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                        v{predictionResult.model_version || '1.0.0'}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mt-1">
-                      {selectedLocObj?.location_name || 'Selected Corridor'}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Target: {predictionResult.prediction_date} at {predictionResult.prediction_time} IST
-                    </p>
-                    {predictionResult.timestamp && (
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                        Inference Timestamp: {predictionResult.timestamp}
-                      </p>
-                    )}
-                  </div>
-
-
-                  <div className="text-right">
-                    <span className="text-3xl font-extrabold font-mono text-slate-50">
-                      {predictionResult.predicted_congestion_pct.toFixed(1)}%
-                    </span>
-                    <div className="mt-1">
-                      <CongestionBadge percentage={predictionResult.predicted_congestion_pct} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Historical Delta Comparison */}
-                <div className="grid grid-cols-3 gap-3 mt-4 text-xs">
-                  <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
-                    <span className="text-slate-400 text-[10px] uppercase font-bold">Predicted Index</span>
-                    <p className="text-base font-bold text-slate-100 font-mono mt-0.5">
-                      {predictionResult.predicted_congestion_pct.toFixed(1)}%
-                    </p>
-                  </div>
-                  <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
-                    <span className="text-slate-400 text-[10px] uppercase font-bold">Historical Baseline</span>
-                    <p className="text-base font-bold text-slate-400 font-mono mt-0.5">
-                      {predictionResult.historical_baseline_pct !== undefined && predictionResult.historical_baseline_pct !== null
-                        ? `${predictionResult.historical_baseline_pct.toFixed(1)}%`
-                        : 'N/A'}
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
-                    <span className="text-slate-400 text-[10px] uppercase font-bold">Scenario Delta</span>
-                    <p
-                      className={`text-base font-bold font-mono mt-0.5 ${
-                        predictionResult.difference_pct >= 0 ? 'text-rose-400' : 'text-emerald-400'
-                      }`}
-                    >
-                      {Number.isFinite(predictionResult.difference_pct) ? (predictionResult.difference_pct >= 0 ? `+${predictionResult.difference_pct.toFixed(1)}%` : `${predictionResult.difference_pct.toFixed(1)}%`) : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Confidence Interval (if supported) */}
-                {predictionResult.confidence_interval && (
-                  <div className="mt-4 px-3 py-2 bg-slate-900/50 rounded-lg border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Empirical 95% Confidence Interval:</span>
-                    </span>
-                    <span className="font-mono text-slate-200">
-                      [{predictionResult.confidence_interval.lower.toFixed(1)}% — {predictionResult.confidence_interval.upper.toFixed(1)}%]
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* SHAP Feature Attribution Chart */}
-              <Card
-                title="SHAP Feature Attributions (Local Explainability)"
-                subtitle="Quantifies how each input feature shifts the predicted congestion above (+) or below (-) the baseline"
-              >
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={predictionResult.shap_attributions || []}
-                      margin={{ top: 10, right: 30, left: 110, bottom: 10 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" horizontal={false} />
-                      <XAxis type="number" stroke="#9CA3AF" tick={{ fontSize: 10 }} unit="%" />
-                      <YAxis
-                        type="category"
-                        dataKey="feature"
-                        stroke="#9CA3AF"
-                        tick={{ fontSize: 10 }}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload;
-                            return (
-                              <div className="bg-slate-900 border border-slate-700 p-2.5 rounded text-xs shadow-xl">
-                                <p className="font-bold text-slate-100">{d.feature}</p>
-                                <p className="text-slate-400">Value: <span className="font-mono text-slate-200">{d.value}</span></p>
-                                <p className={`font-mono mt-1 ${d.impact_pct >= 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                  SHAP Impact: {d.impact_pct > 0 ? `+${d.impact_pct.toFixed(2)}%` : `${d.impact_pct.toFixed(2)}%`}
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <ReferenceLine x={0} stroke="#6B7280" />
-                      <Bar dataKey="impact_pct" radius={[0, 4, 4, 0]}>
-                        {(predictionResult.shap_attributions || []).map((entry, index) => (
-                          <Cell
-                            key={`shap-${index}`}
-                            fill={entry.impact_pct >= 0 ? '#EF4444' : '#10B981'}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="mt-3 p-3 bg-slate-900/60 rounded-lg border border-slate-800 text-xs text-slate-400 leading-relaxed">
-                  <strong className="text-slate-200">SHAP Interpretation:</strong> Red bars indicate variables that significantly increase congestion (e.g. evening commuter peak hour rush, heavy monsoon precipitation, or public events). Green bars indicate dampening factors (e.g. off-peak hours or high-capacity multi-lane highway classifications).
-                </div>
-              </Card>
-            </>
-          ) : (
-            <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-[#111827] border border-slate-800 rounded-xl p-8 text-center">
-              <div className="p-4 bg-slate-900 rounded-full border border-slate-800 text-cyan-400 mb-4">
-                <Gauge className="w-10 h-10" />
-              </div>
-              <h3 className="text-base font-semibold text-slate-200 mb-2">Inference Engine Ready</h3>
-              <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-                Configure your meteorological, temporal, and spatial scenario on the left and click "Calculate Congestion" to generate multi-factor forecasts and tree SHAP attributions.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-500 font-mono">
-                <span className="px-2 py-1 bg-slate-900 rounded border border-slate-800">XGBoost 3.2</span>
-                <span className="px-2 py-1 bg-slate-900 rounded border border-slate-800">SHAP TreeExplainer</span>
-                <span className="px-2 py-1 bg-slate-900 rounded border border-slate-800">2026 Context Isolation</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.event_present} onChange={e=>change('event_present',e.target.checked)}/>Hypothetical event or assembly</label>
+        {form.event_present&&<label className="block text-xs">Event information (optional)<input className={inputClass} value={form.event_name} onChange={e=>change('event_name',e.target.value)} placeholder="Describe your hypothetical event"/></label>}
+        <button disabled={loading||locationLoading||!form.location_id} className="rounded-lg px-5 py-3 bg-cyan-600 text-slate-950 font-semibold disabled:opacity-50">{loading?'Running all four models…':'Predict Congestion Using All 4 Models'}</button>
+      </form>
+    </Card>
+    {error&&<div role="alert" className="p-4 rounded-lg border border-rose-800 bg-rose-950/30 text-rose-200">{error}</div>}
+    {loading&&<LoadingSpinner label="Validating one scenario and running all four estimators…"/>}
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {MODELS.map(([key,name])=>{const item=result?.results?.find(r=>r.model===key),data=item?.result,m=item?.metrics;return <Card key={key} title={name} subtitle={item?`Status: ${item.status}`:'Awaiting scenario'}>
+        <p className="text-3xl font-mono text-cyan-300">{data?`${number(data.predicted_congestion_pct,1)}%`:'—'}</p>
+        <p className="text-xs text-slate-400 mt-2">{item?`Model ${item.available?'loaded':'unavailable'}`:'Model availability checked on prediction'}</p>
+        {item?.error&&<p role="alert" className="text-xs text-rose-300 mt-2">{item.error}</p>}
+        {m&&<p className="text-xs text-slate-400 mt-3">Held-out MAE {number(m.mae)} · RMSE {number(m.rmse)} · R² {number(m.r2,4)}</p>}
+        {data&&<><p className="text-xs text-slate-400 mt-2">{item.explanation_available?'Model-specific contributions available':'Explanation unavailable for this model.'}</p><details className="mt-3 text-xs"><summary className="cursor-pointer text-cyan-300">Advanced model diagnostics</summary><p className="mt-2">{data.explanation_summary}</p>{data.base_value!=null&&<p className="mt-2">Explanation baseline: {number(data.base_value)}%. Reconstruction check: {data.additive_check?.is_consistent?'passed':'unavailable'}.</p>}{data.feature_contributions?.length>0&&<ul className="mt-2 space-y-1">{data.feature_contributions.slice(0,8).map(c=><li key={c.feature}>{c.display_name}: {c.attribution_value>0?'+':''}{number(c.attribution_value)} percentage points</li>)}</ul>}<p className="mt-2">{key==='linear_regression'?'Exact coefficient decomposition, not tree SHAP.':key==='historical_mean'?'Historical mean does not model weather or event interventions.':'TreeExplainer for this estimator.'}</p><p className="mt-2">Prediction ID {data.prediction_id}; executed {data.timestamp}.</p></details></>}
+      </Card>;})}
     </div>
-  );
+    {result&&<Card title="Side-by-side comparison" subtitle={`${result.models_succeeded} of 4 models succeeded. Prediction spread: ${number(spread)} percentage points.`}>
+      {predictions.length>0?<div className="h-72 min-w-0"><ResponsiveContainer width="100%" height="100%"><BarChart data={predictions} margin={{bottom:30,left:0,right:10}}><CartesianGrid stroke="#1F2937"/><XAxis dataKey="model" tick={{fontSize:10}} interval={0}/><YAxis domain={[0,100]} unit="%"/><Tooltip/><Bar dataKey="value" name="Predicted congestion (%)" fill="#06B6D4"/></BarChart></ResponsiveContainer></div>:<p>No valid model outputs.</p>}
+      <p className="text-xs text-slate-400">Best stored benchmark: {result.best_model_by_held_out_metrics||'Unavailable'}. All metrics refer to the existing chronological benchmark, not verified sensor-data forecast accuracy. SHAP describes model associations, not causal effects.</p>
+    </Card>}
+  </div>;
 };

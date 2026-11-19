@@ -61,14 +61,14 @@ export const ModelPerformance = () => {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">Empirical Validation</span>
             <span className="text-slate-600">•</span>
-            <span className="text-xs text-slate-400">Chronological Held-Out Test Set (Nov 21 - Dec 31, 2019)</span>
+            <span className="text-xs text-slate-400">Chronological Held-Out Benchmark</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             <Cpu className="w-6 h-6 text-cyan-400" />
             <span>Four Model Approaches Benchmarking & SHAP</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Comparison of the 4 finalized model approaches. Models evaluated strictly on held-out test samples with zero temporal leakage.
+            Comparison of the 4 finalized model approaches. Metrics were reproduced on held-out benchmark samples. Legacy training shared a timestamp across train/validation and selected its champion using test scores; real-world validity is unverified.
           </p>
         </div>
 
@@ -81,6 +81,7 @@ export const ModelPerformance = () => {
       </div>
 
       {/* Model Comparison Table */}
+      <p className="text-xs text-slate-400">Evaluation samples: {performanceData.evaluation_sample_count ?? 'Unavailable'} · Period: {performanceData.evaluation_period || 'Unavailable'}</p>
       <Card
         title="Chronological Test Benchmark (15% Held-Out Test Split)"
         subtitle="Evaluated across Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and R² score"
@@ -184,7 +185,7 @@ export const ModelPerformance = () => {
           </div>
           ) : (
             <div className="h-72 flex items-center justify-center text-center text-sm text-slate-400 px-6">
-              Per-row held-out predictions have not been saved by the training pipeline. Run a test-set export before displaying this chart.
+              Held-out prediction export is unavailable. Generate the evaluation export before displaying this chart.
             </div>
           )}
         </Card>
@@ -229,7 +230,7 @@ export const ModelPerformance = () => {
       {/* SHAP Explainability Summary */}
       <Card
         title={`SHAP Global Feature Attributions — ${explainabilityData?.model || 'XGBoost Regressor (TreeExplainer)'}`}
-        subtitle={`Average magnitude of impact on model output magnitude: mean(|SHAP value|) · Base Value: ${explainabilityData?.base_value || 24.05}%`}
+        subtitle={`Average magnitude of impact on model output magnitude: mean(|SHAP value|) · Base Value: ${explainabilityData?.base_value ?? 'Unavailable'}%`}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 text-xs">
           {(explainabilityData?.top_drivers || []).slice(0, 4).map((d) => (
