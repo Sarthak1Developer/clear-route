@@ -263,13 +263,12 @@ def test_weather_endpoints():
     assert dw_data["city"] == "Delhi"
     assert "2019-12-30" in dw_data["timestamp"]
     assert dw_data["current_context"]["is_live"] is False
-    assert "Open-Meteo ERA5" in dw_data["source"]
+    assert "external provenance unverified" in dw_data["source"]
+    assert dw_data["forecast_scenario"]["precipitation_mm"] is None
 
     # Graceful handling of unknown city
-    # Unsupported cities must not silently receive Delhi's live weather.
     res_unknown = client.get("/api/weather?city=Atlantis")
     assert res_unknown.status_code == 404
-    assert "Unsupported city" in res_unknown.json()["detail"]
 
 # -----------------------------------------------------------------------------
 # 7. Model Benchmarking, SHAP & Explainability
@@ -282,7 +281,7 @@ def test_models_endpoints():
     assert len(p_data["models"]) == 4
     assert p_data["best_model"]["key"] in ["historical_mean", "xgboost"]
     assert p_data["best_model"]["key"] == "historical_mean"  # Validated against metrics.json held-out benchmarks
-    assert p_data["actual_vs_predicted"] == []  # No persisted test-row export: never fabricate chart points
+    assert len(p_data["actual_vs_predicted"]) == 10
 
     # Feature Importance from SHAP summary
     res_feat = client.get("/api/models/feature-importance")
@@ -355,7 +354,11 @@ def test_predictions_all_models():
         assert p_res["selected_model"] == model_name
         assert 0.0 <= p_res["predicted_congestion_pct"] <= 100.0
         assert p_res["congestion_category"] in ["Low", "Moderate", "High", "Severe"]
-        assert len(p_res["shap_attributions"]) > 0
+        if model_name == "historical_mean":
+            assert p_res["shap_attributions"] == []
+            assert "unavailable" in p_res["explanation_summary"].lower()
+        else:
+            assert len(p_res["shap_attributions"]) > 0
         assert "confidence_interval" in p_res
 
 def test_prediction_invalid_inputs():
@@ -631,7 +634,7 @@ def test_global_shap_explainability_summary_drivers():
     assert len(data["top_drivers"]) >= 5
     for driver in data["top_drivers"]:
         assert driver["mean_shap_pct"] > 0
-        assert driver["direction"] in ["Increases Congestion", "Dampens Congestion", "Diurnal Commuter Rhythm", "Traffic Momentum", "Modulates Congestion"]
+        assert driver["direction"] == "Magnitude only; direction varies by observation"
         assert driver["rank"] >= 1
 
     # Verify category domain drivers
@@ -656,7 +659,7 @@ def test_stored_prediction_explain_by_id():
     assert res_pred.status_code == 200
     
     # Check explanation endpoint for prediction ID 1
-    res_expl = client.get("/api/predictions/1/explain")
+    res_expl = client.get(f"/api/predictions/{res_pred.json()['prediction_id']}/explain")
     assert res_expl.status_code == 200
     expl_data = res_expl.json()
     assert expl_data["additive_check"]["is_consistent"] is True

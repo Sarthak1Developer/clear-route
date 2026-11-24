@@ -1,0 +1,51 @@
+{
+  "url": "https://archive-api.open-meteo.com/v1/archive?latitude=28.6139%2C19.0760%2C12.9716%2C17.3850%2C22.5726&longitude=77.2090%2C72.8777%2C77.5946%2C78.4867%2C88.3639&start_date=2019-04-01&end_date=2019-12-31&hourly=temperature_2m%2Crelative_humidity_2m%2Cprecipitation%2Cwind_speed_10m&timezone=Asia%2FKolkata&models=era5",
+  "retrieved_utc": "2026-11-19T19:20:16.522831+00:00",
+  "sha256": "0b282c0bfba4fae8778e8a83d9cbc7b7d7060534de182d5bc910c9627b2bff5e",
+  "status": "downloaded",
+  "source_name": "Open-Meteo Historical Weather API / ERA5",
+  "provenance_type": "genuine_external_api",
+  "models": "era5",
+  "timezone": "Asia/Kolkata",
+  "license": "CC BY 4.0",
+  "attribution_url": "https://open-meteo.com/en/docs/historical-weather-api",
+  "rows": 33000,
+  "cities": [
+    "Delhi",
+    "Mumbai",
+    "Bengaluru",
+    "Hyderabad",
+    "Kolkata"
+  ],
+  "start_date": "2019-04-01",
+  "end_date": "2019-12-31",
+  "parquet_sha256": "f4438cc9b344d8fa6d8e02f149c6df7f71d0949b391efd89f7031a452d3ccad4",
+  "raw_response_sha256": "0b282c0bfba4fae8778e8a83d9cbc7b7d7060534de182d5bc910c9627b2bff5e",
+  "returned_grid_coordinates": [
+    {
+      "city": "Delhi",
+      "latitude": 28.5,
+      "longitude": 77.25
+    },
+    {
+      "city": "Mumbai",
+      "latitude": 19.0,
+      "longitude": 73.0
+    },
+    {
+      "city": "Bengaluru",
+      "latitude": 13.0,
+      "longitude": 77.5
+    },
+    {
+      "city": "Hyderabad",
+      "latitude": 17.5,
+      "longitude": 78.5
+    },
+    {
+      "city": "Kolkata",
+      "latitude": 22.5,
+      "longitude": 88.25
+    }
+  ]
+}

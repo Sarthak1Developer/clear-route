@@ -15,6 +15,8 @@ def export_dataset(dataset_id: str, db: Session = Depends(get_db)):
     """Exports actual database-driven tables as CSV attachments for tabular ingestion and Power BI reporting."""
     if not isinstance(db, Session):
         db = SessionLocal()
+    if dataset_id not in {"city_summary", "location_summary", "hourly_patterns", "weather_impact", "model_evaluation", "gold_master_sample"}:
+        raise HTTPException(status_code=404, detail="Unknown export dataset")
     repo = DataRepository(db)
     output = io.StringIO()
     writer = csv.writer(output)
@@ -42,7 +44,7 @@ def export_dataset(dataset_id: str, db: Session = Depends(get_db)):
             for loc in corridors:
                 writer.writerow([
                     loc["location_code"], c.city_name, loc["location_name"], loc["corridor_name"],
-                    loc["road_type"], loc["road_lanes"], loc["speed_limit_kmh"],
+                    loc["road_type"], loc["road_lanes"], loc["free_flow_speed_kmh"],
                     loc["observed_speed_kmh"], loc["avg_congestion_pct"]
                 ])
 
@@ -68,11 +70,11 @@ def export_dataset(dataset_id: str, db: Session = Depends(get_db)):
 
     elif dataset_id == "model_evaluation":
         writer.writerow(["model_key", "model_name", "algorithm_family", "mae", "rmse", "r2_score", "is_champion"])
-        models = repo.get_all_model_metadata()
-        for m in models:
-            writer.writerow([
-                m.model_key, m.model_name, m.algorithm_family, m.mae, m.rmse, m.r2_score, int(m.is_primary)
-            ])
+        from backend.app.services.inference_service import inference_service
+        models=inference_service.metrics.get("models",{})
+        if not models:raise HTTPException(503,"Model evaluation artifact unavailable")
+        for key,model in models.items():
+            writer.writerow([key,model['name'],model['family'],model['mae'],model['rmse'],model['r2'],int(key==inference_service.metrics.get('best_model'))])
 
     else:
         # Default / gold_master_sample: real traffic records

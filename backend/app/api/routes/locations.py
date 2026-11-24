@@ -12,7 +12,7 @@ router = APIRouter(tags=["Locations"])
 def search_locations(
     q: str = Query("", description="Search term for corridor, location name or code"),
     city: str = Query("", description="Optional metropolitan city filter"),
-    limit: int = Query(20, description="Maximum number of corridor records to return"),
+    limit: int = Query(20, ge=1, le=200, description="Maximum number of corridor records to return"),
     db: Session = Depends(get_db),
 ):
     """Searches road corridors and intersections with actual average congestion and observed speeds."""
@@ -32,13 +32,13 @@ def search_locations(
     return repo.search_locations(q=query_str, city_filter=city_str, limit=parsed_limit)
 
 @router.get("/locations/{location_id}/trends", response_model=LocationTrendsResponse, summary="Get diurnal and weekly trends for a corridor")
-def get_location_trends(location_id: str, db: Session = Depends(get_db)):
+def get_location_trends(location_id: str, db: Session = Depends(get_db), day_of_week: Optional[int] = Query(None, ge=0, le=6), month: Optional[int] = Query(None, ge=1, le=12)):
     """Retrieves 24-hour diurnal patterns, weekday vs weekend speed deltas, and monthly trends for a corridor."""
     if not isinstance(db, Session):
         db = SessionLocal()
     service = AnalyticsService(db)
     try:
-        return service.get_location_trends(location_id)
+        return service.get_location_trends(location_id, day_of_week=day_of_week if isinstance(day_of_week,int) else None, month=month if isinstance(month,int) else None)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -47,7 +47,7 @@ def get_location_history(
     location_id: str,
     start_date: Optional[str] = Query(None, description="ISO format start date YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="ISO format end date YYYY-MM-DD"),
-    limit: int = Query(50, description="Record pagination limit"),
+    limit: int = Query(50, ge=1, le=1000, description="Record pagination limit"),
     db: Session = Depends(get_db),
 ):
     """Retrieves genuine time-series observations from Uber Movement / traffic_records for a corridor."""

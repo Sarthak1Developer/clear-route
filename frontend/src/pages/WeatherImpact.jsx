@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { HistoricalFilters } from '../components/common/HistoricalFilters';
 import { Card, MetricCard } from '../components/common/Card';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -14,7 +15,9 @@ import {
 } from 'lucide-react';
 
 export const WeatherImpact = () => {
+  const [historicalFilters,setHistoricalFilters]=useState({});
   const { selectedCity } = useApp();
+  useEffect(()=>{setHistoricalFilters({});},[selectedCity.name]);
   const [weatherData, setWeatherData] = useState(null);
   const [cityWeather, setCityWeather] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ export const WeatherImpact = () => {
       try {
         setLoading(true);
         const [impactRes, cityRes] = await Promise.all([
-          api.getWeatherImpact(),
+          api.getWeatherImpact(selectedCity.name,historicalFilters),
           api.getWeather(selectedCity.name).catch(() => null),
         ]);
         if (isMounted) {
@@ -42,7 +45,7 @@ export const WeatherImpact = () => {
     }
     loadWeather();
     return () => { isMounted = false; };
-  }, [selectedCity]);
+  }, [selectedCity,historicalFilters]);
 
 
   if (loading) return <LoadingSpinner label="Analyzing meteorological correlation curves (Open-Meteo ERA5)..." />;
@@ -50,20 +53,21 @@ export const WeatherImpact = () => {
 
   return (
     <div className="space-y-6">
+      <HistoricalFilters city={selectedCity.name} value={historicalFilters} onChange={setHistoricalFilters}/>
       {/* Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider">Meteorological Analytics</span>
             <span className="text-slate-600">•</span>
-            <span className="text-xs text-slate-400">ECMWF ERA5 Reanalysis via Open-Meteo API</span>
+            <span className="text-xs text-slate-400">Historical Gold weather annotations</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             <CloudRain className="w-6 h-6 text-cyan-400" />
             <span>Weather & Precipitation Impact</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Empirical investigation of how precipitation, ambient temperature, and relative humidity influence urban traffic speeds across Indian metro corridors.
+            Dataset associations between precipitation, temperature, humidity and corridor congestion. See the source status for historical weather; traffic remains a generated benchmark.
           </p>
         </div>
       </div>
@@ -87,11 +91,11 @@ export const WeatherImpact = () => {
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="text-[10px] px-2 py-0.5 rounded font-mono border bg-slate-900 border-slate-700 text-slate-300">
-                  {cityWeather.current_context?.is_live ? 'Live Provider Stream' : 'Verified Repository Feed'}
+                  {cityWeather.current_context?.is_live ? 'Live Provider Stream' : 'Historical database archive'}
                 </span>
               </div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span>{cityWeather.current_context?.weather_condition || 'Overcast / Moderate'}</span>
+                <span>{cityWeather.current_context?.weather_condition || 'Unknown'}</span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Provenance: {cityWeather.provenance || 'Open-Meteo ERA5 Reanalysis'}
@@ -101,7 +105,7 @@ export const WeatherImpact = () => {
             <div className="flex items-center gap-6">
               <div className="text-right">
                 <span className="text-2xl font-extrabold font-mono text-slate-100">
-                  {cityWeather.current_context?.temperature_c !== undefined ? `${cityWeather.current_context.temperature_c.toFixed(1)}°C` : 'N/A'}
+                  {Number.isFinite(cityWeather.current_context?.temperature_c) ? `${cityWeather.current_context.temperature_c.toFixed(1)}°C` : 'N/A'}
                 </span>
                 <p className="text-[11px] text-slate-400">Ambient Temperature</p>
               </div>
@@ -112,25 +116,25 @@ export const WeatherImpact = () => {
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Precipitation Rate</span>
               <p className="font-mono text-cyan-300 font-bold text-sm mt-0.5">
-                {cityWeather.current_context?.precipitation_mm !== undefined ? `${cityWeather.current_context.precipitation_mm.toFixed(1)} mm/hr` : '0.0 mm/hr'}
+                {Number.isFinite(cityWeather.current_context?.precipitation_mm) ? `${cityWeather.current_context.precipitation_mm.toFixed(1)} mm/hr` : 'Unavailable'}
               </p>
             </div>
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Relative Humidity</span>
               <p className="font-mono text-slate-200 font-bold text-sm mt-0.5">
-                {cityWeather.current_context?.humidity_pct !== undefined ? `${cityWeather.current_context.humidity_pct.toFixed(0)}%` : 'N/A'}
+                {Number.isFinite(cityWeather.current_context?.humidity_pct) ? `${cityWeather.current_context.humidity_pct.toFixed(0)}%` : 'N/A'}
               </p>
             </div>
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Wind Speed</span>
               <p className="font-mono text-slate-200 font-bold text-sm mt-0.5">
-                {cityWeather.current_context?.wind_speed_kmh !== undefined ? `${cityWeather.current_context.wind_speed_kmh.toFixed(1)} km/h` : 'N/A'}
+                {Number.isFinite(cityWeather.current_context?.wind_speed_kmh) ? `${cityWeather.current_context.wind_speed_kmh.toFixed(1)} km/h` : 'N/A'}
               </p>
             </div>
             <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Provider Connectivity</span>
               <p className="font-mono text-emerald-400 font-bold text-[11px] mt-0.5">
-                {cityWeather.provider_status?.includes('unavailable') ? 'Database Fallback Active' : 'Live Sync Active'}
+                {cityWeather.provider_available ? 'Live Provider Active' : 'Historical Archive'}
               </p>
             </div>
           </div>
@@ -142,17 +146,17 @@ export const WeatherImpact = () => {
         <MetricCard
           title="Monsoon Congestion Surge"
           value={weatherData?.heavy_rain_surge !== undefined && weatherData?.heavy_rain_surge !== null
-            ? `+${weatherData.heavy_rain_surge.toFixed(1)}%`
-            : '0.0%'}
+            ? `${weatherData.heavy_rain_surge>0?'+':''}${weatherData.heavy_rain_surge.toFixed(1)} pp`
+            : 'Unavailable'}
           icon={CloudRain}
           accentColor="rose"
-          description="Precipitation > 15 mm/hr"
+          description="Precipitation ≥ 15 mm/hr"
         />
         <MetricCard
           title="Rainfall Correlation (r)"
           value={weatherData?.rain_correlation !== undefined && weatherData?.rain_correlation !== null
             ? `${weatherData.rain_correlation > 0 ? '+' : ''}${weatherData.rain_correlation.toFixed(2)}`
-            : '0.00'}
+            : 'Unavailable'}
           icon={Droplets}
           accentColor="cyan"
           description="Empirical Pearson correlation"
@@ -161,22 +165,29 @@ export const WeatherImpact = () => {
           title="Temperature Sensitivity"
           value={weatherData?.temp_correlation !== undefined && weatherData?.temp_correlation !== null
             ? `${weatherData.temp_correlation.toFixed(2)}`
-            : '0.00'}
+            : 'Unavailable'}
           icon={Thermometer}
           accentColor="amber"
           description="Ambient temperature sensitivity"
         />
         <MetricCard
-          title="ERA5 Data Coverage"
-          value="100%"
-          unit="Harmonized"
+          title="Matched historical records"
+          value={weatherData?.sample_count ? weatherData.sample_count.toLocaleString() : 'No records'}
+          unit="Rows"
           icon={Wind}
           accentColor="emerald"
-          description="Hourly timestamp aligned"
+          description="Timestamp-matched records in active database"
         />
       </div>
 
 
+      {weatherData?.heavy_rain_reason&&<p role="note" className="text-xs text-amber-200">{weatherData.heavy_rain_reason} {weatherData.rain_summary?`Maximum rainfall in this scope: ${weatherData.rain_summary.max} mm/hour.`:''}</p>}
+      {weatherData?.reason && <EmptyState title="Insufficient weather observations" message={weatherData.reason} />}
+      <p className="text-xs text-slate-400">Matched traffic/weather observations: {weatherData?.sample_count ?? 0}. {weatherData?.weather_provenance?.verified?'ERA5 weather retrieval verified; traffic remains a generated benchmark.':'Historical weather source provenance is unverified.'} User-entered prediction scenarios are hypothetical.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard title="Mean historical humidity" value={weatherData?.humidity_summary ? `${weatherData.humidity_summary.mean}%` : 'Unavailable'} description="Timestamp-matched archive, not current live weather" />
+        <MetricCard title="Mean historical wind" value={weatherData?.wind_summary ? `${weatherData.wind_summary.mean} km/h` : 'Unavailable'} description="Timestamp-matched archive, not a causal effect" />
+      </div>
       {/* Primary Weather Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Precipitation Bands vs Congestion */}
@@ -251,7 +262,7 @@ export const WeatherImpact = () => {
             <span>Monsoon Dynamics</span>
           </h4>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            July and August data in Mumbai (Andheri/WEH) and Kolkata show up to 28% reductions in free-flow speeds during monsoon downpours exceeding 20mm/hr.
+            Compare rainfall bands using the available database sample. No real-world monsoon effect has been verified.
           </p>
         </div>
 
@@ -261,7 +272,7 @@ export const WeatherImpact = () => {
             <span>Summer Heat Waves</span>
           </h4>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            Temperatures exceeding 40°C in Delhi and Hyderabad correlate with reduced afternoon off-peak travel, shifting discretionary trips toward late evening hours (after 20:00 IST).
+            Temperature summaries describe associations in the supplied sample. They do not identify changes in travel demand or causal heat effects.
           </p>
         </div>
 
@@ -271,7 +282,7 @@ export const WeatherImpact = () => {
             <span>Fog & Visibility</span>
           </h4>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            December morning fog in Delhi correlates with lower vehicle speeds and delayed AM peak arrivals, stretching the commuter window from 08:30 to 11:30 IST.
+            The current traffic dataset does not establish fog-related delays. Visibility effects remain unverified.
           </p>
         </div>
       </div>

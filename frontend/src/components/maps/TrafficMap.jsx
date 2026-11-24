@@ -6,7 +6,7 @@ import { Info, AlertCircle, ArrowUpRight } from 'lucide-react';
 
 // Custom SVG icon generator for congestion pins
 const createCustomIcon = (congestionPct) => {
-  let color = '#10B981'; // emerald (<25)
+  let color = Number.isFinite(congestionPct) ? '#10B981' : '#64748B'; // emerald (<25)
   if (congestionPct > 75) color = '#EF4444'; // rose (>75)
   else if (congestionPct > 50) color = '#F97316'; // orange (>50)
   else if (congestionPct > 25) color = '#F59E0B'; // amber (>25)
@@ -29,7 +29,7 @@ const createCustomIcon = (congestionPct) => {
         font-size: 10px;
         font-family: monospace;
       ">
-        ${Math.round(congestionPct)}%
+        ${Number.isFinite(congestionPct) ? Math.round(congestionPct) + '%' : 'N/A'}
       </div>
     `,
     iconSize: [24, 24],
@@ -59,7 +59,7 @@ export const TrafficMap = ({
       {/* Map Disclaimer Banner */}
       <div className="absolute top-3 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs text-slate-300 flex items-center gap-2 shadow-lg">
         <Info className="w-3.5 h-3.5 text-cyan-400" />
-        <span>Analytical Road Network · OpenStreetMap & Zenodo Data</span>
+        <span>Analytical Road Network · OpenStreetMap basemap · demonstration traffic</span>
       </div>
 
       <MapContainer
@@ -78,7 +78,7 @@ export const TrafficMap = ({
         />
 
         {locations.map((loc) => {
-          const congestion = loc.avg_congestion_pct || loc.congestion_percentage || 45;
+          const congestion = loc.avg_congestion_pct ?? loc.congestion_percentage ?? null;
           const icon = createCustomIcon(congestion);
 
           return (
@@ -106,7 +106,7 @@ export const TrafficMap = ({
                       <p><strong>Corridor:</strong> {loc.corridor_name || 'Primary Corridor'}</p>
                       <p><strong>Road Class:</strong> <span className="font-mono uppercase">{loc.road_type || 'Primary'}</span> ({loc.road_lanes || 4} lanes)</p>
                       <p><strong>Free Flow:</strong> {loc.free_flow_speed_kmh || 55} km/h</p>
-                      <p><strong>Observed Speed:</strong> {loc.observed_speed_kmh || (55 * (1 - congestion / 100)).toFixed(1)} km/h</p>
+                      <p><strong>Observed Speed:</strong> {loc.observed_speed_kmh ?? 'Unavailable'} km/h</p>
                     </div>
 
                     {onSelectLocation && (

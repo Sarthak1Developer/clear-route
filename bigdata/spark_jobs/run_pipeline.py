@@ -25,6 +25,15 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(levelname)s] - 
 logger = logging.getLogger("clearroute.bigdata.pipeline")
 
 def run_complete_pipeline():
+    import json
+    traffic_path = "data/bronze/uber_movement/raw_uber_movement_traffic.csv"
+    metadata_path = "data/bronze/uber_movement/provenance_metadata.json"
+    if not os.path.exists(traffic_path) or not os.path.exists(metadata_path):
+        raise FileNotFoundError("Genuine traffic CSV and provenance_metadata.json are required before production ETL.")
+    with open(metadata_path, encoding="utf-8") as stream:
+        metadata = json.load(stream)
+    if metadata.get("is_genuine_sensor_data") is not True:
+        raise RuntimeError("Production ETL blocked: existing traffic is generated demonstration data, not genuine observations. Files preserved.")
     start_time = time.time()
     logger.info("================================================================")
     logger.info("STARTING CLEARROUTE BIG DATA PIPELINE (BRONZE -> SILVER -> GOLD)")
@@ -35,7 +44,7 @@ def run_complete_pipeline():
     w_csv = ingest_weather_era5()
     osm_csv = ingest_osm_infrastructure()
     ev_2019, ev_2026 = ingest_events_holidays()
-    t_csv = ingest_uber_movement()
+    t_csv = traffic_path
     logger.info("Bronze Stage Completed Successfully.")
 
     # 2. Silver Layer Cleaning & Standardization

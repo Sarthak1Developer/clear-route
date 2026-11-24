@@ -24,6 +24,10 @@ export const DataExplorer = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [startDate,setStartDate]=useState('');
+  const [endDate,setEndDate]=useState('');
+  const [sort,setSort]=useState('timestamp_desc');
+  const [recordsError,setRecordsError]=useState(null);
   const [filterCity, setFilterCity] = useState('');
   const [searchCorridor, setSearchCorridor] = useState('');
   const [loadingRecords, setLoadingRecords] = useState(false);
@@ -70,21 +74,34 @@ export const DataExplorer = () => {
           location: searchCorridor,
           page: currentPage,
           page_size: pageSize,
+          start_date:startDate||undefined,
+          end_date:endDate||undefined,
+          sort,
         });
         if (isMounted) {
+          setRecordsError(null);
           setRecords(res.records || []);
           setTotalRecords(res.total || 0);
           setTotalPages(res.total_pages || 1);
         }
       } catch (err) {
-        console.error('Error fetching data records:', err);
+        if (isMounted) { setRecordsError(err.message); setRecords([]); }
       } finally {
         if (isMounted) setLoadingRecords(false);
       }
     }
     fetchRecords();
     return () => { isMounted = false; };
-  }, [filterCity, searchCorridor, currentPage, pageSize]);
+  }, [filterCity, searchCorridor, currentPage, pageSize,startDate,endDate,sort]);
+
+  const exportCurrentPage=()=>{
+    if (!records.length) return;
+    const columns=Object.keys(records[0]);
+    const escape=value=>'"'+String(value??'').replaceAll('"','""')+'"';
+    const csv=[columns.map(escape).join(','),...records.map(row=>columns.map(c=>escape(row[c])).join(','))].join('\r\n');
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const link=document.createElement('a');link.href=url;link.download='clearroute_filtered_page.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
 
   const filteredSources = sources.filter((s) =>
     selectedSourceFilter === 'all' ? true : s.category.toLowerCase() === selectedSourceFilter.toLowerCase()
@@ -92,6 +109,13 @@ export const DataExplorer = () => {
 
   return (
     <div className="space-y-6">
+      {recordsError&&<p role="alert" className="text-rose-300">{recordsError}</p>}
+      <div className="flex flex-wrap gap-3 text-xs items-center">
+        <label>Start date <input aria-label="Start date" type="date" className="bg-slate-900 p-2 rounded border border-slate-700" value={startDate} onChange={e=>{setStartDate(e.target.value);setCurrentPage(1);}}/></label>
+        <label>End date <input aria-label="End date" type="date" className="bg-slate-900 p-2 rounded border border-slate-700" value={endDate} onChange={e=>{setEndDate(e.target.value);setCurrentPage(1);}}/></label>
+        <button onClick={exportCurrentPage} disabled={!records.length} className="bg-cyan-900 border border-cyan-700 rounded px-3 py-2 disabled:opacity-40">Export current page CSV</button>
+        <label>Sort <select aria-label="Record sort" className="bg-slate-900 p-2 rounded border border-slate-700" value={sort} onChange={e=>{setSort(e.target.value);setCurrentPage(1);}}><option value="timestamp_desc">Newest first</option><option value="timestamp_asc">Oldest first</option><option value="congestion_desc">Highest congestion</option><option value="congestion_asc">Lowest congestion</option></select></label>
+      </div>
       {/* Header */}
       <div className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -105,7 +129,7 @@ export const DataExplorer = () => {
             <span>Database Explorer & Governance Audit</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Inspect raw ground-truth traffic observation records stored in PostgreSQL/SQLite or audit the ingested source lineage and schema validation rules.
+            Inspect stored traffic sample records stored in PostgreSQL/SQLite or audit the ingested source lineage and schema validation rules.
           </p>
         </div>
 
@@ -198,7 +222,7 @@ export const DataExplorer = () => {
           {/* Records Table Card */}
           <Card
             title={`Database Traffic Observations (${totalRecords.toLocaleString()} Total Records)`}
-            subtitle="Ground-truth time-series records ingested from Zenodo Uber Movement speeds and mapped OpenStreetMap geometry"
+            subtitle="Application database sample; traffic provenance and consistency with Gold are unverified."
           >
             {loadingRecords ? (
               <LoadingSpinner label="Fetching paginated database records..." />
@@ -289,15 +313,15 @@ export const DataExplorer = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
               title="Analytical Records"
-              value={quality?.total_gold_records?.toLocaleString() || '184,500'}
-              unit="Gold Rows"
+              value={quality?.total_gold_records?.toLocaleString() ?? 'Unavailable'}
+              unit="Database Rows"
               icon={Layers}
               accentColor="cyan"
-              description="Unified analytical dataset"
+              description="Application database sample"
             />
             <MetricCard
               title="Completeness Rate"
-              value={`${(quality?.completeness_rate || 99.4).toFixed(1)}%`}
+              value={`${(quality?.completeness_rate ?? 0).toFixed(1)}%`}
               icon={CheckCircle2}
               accentColor="emerald"
               description="Null handling applied in Silver"
@@ -307,7 +331,7 @@ export const DataExplorer = () => {
               value={`${quality?.duplicate_count ?? 0} Duplicates`}
               icon={ShieldCheck}
               accentColor="blue"
-              description="Window-deduplicated in Spark"
+              description="Database duplicate check"
             />
             <MetricCard
               title="Target Variable"
@@ -321,7 +345,7 @@ export const DataExplorer = () => {
           {/* Sources Table */}
           <Card
             title="Primary Data Sources & Provenance Catalog"
-            subtitle="Authentic open datasets ingested without synthetic number generation"
+            subtitle="Catalog attributions are unverified. Counts show application database rows where available."
           >
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
@@ -341,7 +365,7 @@ export const DataExplorer = () => {
                     <tr key={s.id || idx} className="hover:bg-slate-800/30 transition-colors">
                       <td className="py-3 px-3">
                         <div className="font-semibold text-slate-100">{s.source_name}</div>
-                        <div className="text-[10px] text-slate-400">{s.provenance_url || 'Verified Repository'}</div>
+                        <div className="text-[10px] text-slate-400">{s.provenance_url || 'Source not verified'}</div>
                       </td>
                       <td className="py-3 px-2">
                         <Badge variant={s.category === 'Traffic' ? 'accent' : s.category === 'Weather' ? 'primary' : 'default'}>
@@ -350,7 +374,7 @@ export const DataExplorer = () => {
                       </td>
                       <td className="py-3 px-2 font-mono text-slate-300">{s.temporal_coverage}</td>
                       <td className="py-3 px-2 text-slate-400">{s.spatial_coverage}</td>
-                      <td className="py-3 px-2 font-mono text-slate-200">{s.record_count?.toLocaleString()}</td>
+                      <td className="py-3 px-2 font-mono text-slate-200">{s.record_count == null ? 'Unavailable' : s.record_count.toLocaleString()}</td>
                       <td className="py-3 px-2 text-slate-400 font-mono text-[11px]">{s.license}</td>
                       <td className="py-3 px-2 text-right">
                         <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
@@ -384,7 +408,7 @@ export const DataExplorer = () => {
             <Card title="Dataset Limitations & Academic Integrity">
               <div className="space-y-3 text-slate-300 leading-relaxed text-[11px]">
                 <p>
-                  <strong className="text-amber-400">1. Temporal Coverage:</strong> Historical model training is strictly bound to April 1 – December 31, 2019 due to the temporal availability of the Zenodo Uber Movement archive.
+                  <strong className="text-amber-400">1. Temporal Coverage:</strong> Available model artifacts use generated demonstration traffic for April to December 2019. Genuine sensor observations are missing.
                 </p>
                 <p>
                   <strong className="text-amber-400">2. Accident Context:</strong> MoRTH road safety figures provide contextual corridor hazard ratings rather than real-time accident notifications.

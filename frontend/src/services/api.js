@@ -8,20 +8,23 @@ const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 async function handleResponse(response) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData.detail || errorData.message || `HTTP Error ${response.status}: ${response.statusText}`;
+    const detail = Array.isArray(errorData.detail) ? errorData.detail.map(item => `${item.loc?.join('.')}: ${item.msg}`).join('; ') : errorData.detail;
+    const message = detail || errorData.message || `HTTP Error ${response.status}: ${response.statusText}`;
     throw new Error(message);
   }
   return response.json();
 }
 
 export const api = {
+  async getEventWindow(id,filters={}) { return fetch(`${BASE_URL}/events/${id}/observations?${new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([,v])=>v)))}`).then(handleResponse); },
+  async getProfile(filters = {}) { return fetch(`${BASE_URL}/analytics/profile?${new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([,v])=>v)))}`).then(handleResponse); },
   // System Health & Overview
   async getHealth() {
     return fetch(`${BASE_URL}/health`).then(handleResponse);
   },
 
-  async getOverview() {
-    return fetch(`${BASE_URL}/overview`).then(handleResponse);
+  async getOverview(city = '') {
+    return fetch(`${BASE_URL}/overview?${new URLSearchParams(city ? {city} : {})}`).then(handleResponse);
   },
 
   // Cities
@@ -50,8 +53,8 @@ export const api = {
     return fetch(`${BASE_URL}/locations/${encodeURIComponent(locationId)}/history?${params.toString()}`).then(handleResponse);
   },
 
-  async getLocationTrends(locationId) {
-    return fetch(`${BASE_URL}/locations/${encodeURIComponent(locationId)}/trends`).then(handleResponse);
+  async getLocationTrends(locationId,filters={}) {
+    return fetch(`${BASE_URL}/locations/${encodeURIComponent(locationId)}/trends?${new URLSearchParams(filters)}`).then(handleResponse);
   },
 
   // Predictions
@@ -89,13 +92,12 @@ export const api = {
   },
 
   // Events
-  async getEvents(city = '') {
-    const url = city ? `${BASE_URL}/events/${encodeURIComponent(city)}` : `${BASE_URL}/events`;
-    return fetch(url).then(handleResponse);
+  async getEvents(city = '', filters = {}) {
+    return fetch(`${BASE_URL}/events?${new URLSearchParams({...Object.fromEntries(Object.entries(filters).filter(([,v])=>v)),...(city?{city}:{})})}`).then(handleResponse);
   },
 
-  async getEventImpact(city = '') {
-    const params = city ? `?city=${encodeURIComponent(city)}` : '';
+  async getEventImpact(city = '', filters = {}) {
+    const params = `?${new URLSearchParams({...Object.fromEntries(Object.entries(filters).filter(([,v])=>v)),...(city?{city}:{})})}`;
     return fetch(`${BASE_URL}/events/impact${params}`).then(handleResponse);
   },
 
@@ -116,8 +118,8 @@ export const api = {
     return fetch(`${BASE_URL}/weather/history?${params.toString()}`).then(handleResponse);
   },
 
-  async getWeatherImpact() {
-    return fetch(`${BASE_URL}/weather/impact`).then(handleResponse);
+  async getWeatherImpact(city = '', filters = {}) {
+    return fetch(`${BASE_URL}/weather/impact?${new URLSearchParams({...Object.fromEntries(Object.entries(filters).filter(([,v])=>v)),...(city?{city}:{})})}`).then(handleResponse);
   },
 
 

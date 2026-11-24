@@ -1,5 +1,6 @@
 import os
 import json
+import csv
 from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -28,6 +29,9 @@ def get_model_performance(db: Session = Depends(get_db)):
                 metrics_data = json.load(f)
         except Exception:
             pass
+
+    if not metrics_data.get("models"):
+        raise HTTPException(status_code=503, detail="Evaluation artifact unavailable; database seed metrics are not a substitute.")
 
     model_items = []
     best_key = metrics_data.get("best_model")
@@ -63,12 +67,15 @@ def get_model_performance(db: Session = Depends(get_db)):
                 "name": v.get("name", k),
                 "family": v.get("family", "Statistical Model"),
                 "role": v.get("role", "Benchmarking"),
-                "mae": round(float(v.get("mae", 0.0)), 3),
-                "rmse": round(float(v.get("rmse", 0.0)), 3),
-                "r2": round(float(v.get("r2", 1.0)), 3),
+                "mae": round(float(v["mae"]), 3),
+                "rmse": round(float(v["rmse"]), 3),
+                "r2": round(float(v["r2"]), 3),
                 "is_primary": bool(is_prim),
             })
             idx += 1
+
+    if not model_items:
+        raise HTTPException(status_code=503, detail="Model evaluation metrics unavailable.")
 
     # Verify best model based on genuine held-out test metrics
     if best_key:
@@ -80,11 +87,23 @@ def get_model_performance(db: Session = Depends(get_db)):
         primary_model = next((m for m in model_items if m["is_primary"]), None)
         best = primary_model or min(model_items, key=lambda x: x["mae"])
 
-    # No per-row held-out predictions are persisted by the training pipeline.
-    # Do not publish illustrative numbers as if they were measured test observations.
+    # Use exported held-out observations; no illustrative chart points.
     actual_vs_pred = []
+    samples_path = os.path.join(PROJECT_ROOT, "powerbi", "exports", "model_actual_vs_predicted.csv")
+    if os.path.exists(samples_path):
+        with open(samples_path, newline="", encoding="utf-8") as stream:
+            for index, row in enumerate(csv.DictReader(stream), 1):
+                actual_vs_pred.append({"index": index, "timestamp": row["timestamp"],
+                    "actual": float(row["actual_congestion_pct"]),
+                    "predicted": float(row["pred_xgboost"])})
+                if index == 10:
+                    break
 
+    config_path = os.path.join(PROJECT_ROOT, "ml", "artifacts", "training_config.json")
+    chronology = json.loads(open(config_path, encoding="utf-8").read()).get("dataset_split_chronology", {}) if os.path.exists(config_path) else {}
     return {
+        "evaluation_sample_count": metrics_data.get("total_test_samples"),
+        "evaluation_period": chronology.get("test_period"),
         "models": model_items,
         "best_model": best,
         "actual_vs_predicted": actual_vs_pred,
